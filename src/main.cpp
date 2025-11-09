@@ -293,13 +293,21 @@ int main()
   GLuint vertex_array_object_id = BuildTriangles();
 
   // Carregamos modelos OBJ da pasta data/
-  ObjModel spheremodel("../../data/sphere.obj");
-  ComputeNormals(&spheremodel);
-  BuildTrianglesAndAddToVirtualScene(&spheremodel);
+  // ObjModel spheremodel("../../data/sphere.obj");
+  // ComputeNormals(&spheremodel);
+  // BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-  ObjModel bunnymodel("../../data/bunny.obj");
-  ComputeNormals(&bunnymodel);
-  BuildTrianglesAndAddToVirtualScene(&bunnymodel);
+  // ObjModel bunnymodel("../../data/bunny.obj");
+  // ComputeNormals(&bunnymodel);
+  // BuildTrianglesAndAddToVirtualScene(&bunnymodel);
+
+  ObjModel uspmodel("../../data/USP.obj");
+  ComputeNormals(&uspmodel);
+  BuildTrianglesAndAddToVirtualScene(&uspmodel);
+
+  // ObjModel cowmodel("../../data/cow.obj");
+  // ComputeNormals(&cowmodel);
+  // BuildTrianglesAndAddToVirtualScene(&cowmodel);
 
   // Inicializamos o código para renderização de texto.
   TextRendering_Init();
@@ -382,7 +390,7 @@ int main()
     // Note que, no sistema de coordenadas da câmera, os planos near e far
     // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
     float nearplane = -0.1f;  // Posição do "near plane"
-    float farplane  = -10.0f; // Posição do "far plane"
+    float farplane  = -1000.0f; // Posição do "far plane"
 
     if (g_UsePerspectiveProjection)
     {
@@ -594,18 +602,41 @@ int main()
     // Agora queremos desenhar os eixos XYZ de coordenadas GLOBAIS.
     // Para tanto, colocamos a matriz de modelagem igual à identidade.
     // Veja slides 2-14 e 184-190 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-    model = Matrix_Identity();
 
     #define BUNNY 1
+    #define USP 2
+    #define COW 3
 
-    // Desenhamos o modelo do coelho
-    model = Matrix_Translate(1.0f,0.0f,0.0f)
-          * Matrix_Rotate_Z(g_AngleZ)
-          * Matrix_Rotate_Y(g_AngleY)
-          * Matrix_Rotate_X(g_AngleX);
-    glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-    glUniform1i(g_object_id_uniform, BUNNY);
-    DrawVirtualObject("the_bunny");
+    // USP em primeira pessoa (fixo na tela)
+    // Pegamos a matriz inversa da view para "desfazer" a rotação da câmera
+    glm::mat4 view_inverse = glm::inverse(view);
+
+    // Extraímos apenas a parte de rotação (removendo a translação)
+    glm::mat4 rotation_inverse = view_inverse;
+    rotation_inverse[3][0] = 0.0f;
+    rotation_inverse[3][1] = 0.0f;
+    rotation_inverse[3][2] = 0.0f;
+
+    model = Matrix_Identity();
+    model = model * Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+    model = model * rotation_inverse; // Aplica a inversa da rotação
+    model = model * Matrix_Translate(0.4f, -0.4f, -0.8f); // Offset local
+    model = model * Matrix_Scale(0.1f, 0.1f, 0.1f);
+
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, USP);
+
+    glUniform1i(g_object_id_uniform, 10); 
+    DrawVirtualObject("Cube.003");
+
+    glUniform1i(g_object_id_uniform, 11);
+    DrawVirtualObject("Cube.002");
+
+    glUniform1i(g_object_id_uniform, 12);
+    DrawVirtualObject("Cube.001");
+
+    glUniform1i(g_object_id_uniform, 13);
+    DrawVirtualObject("Cube");
 
     // Enviamos a nova matriz "model" para a placa de vídeo (GPU). Veja o
     // arquivo "shader_vertex.glsl".
