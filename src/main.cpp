@@ -105,6 +105,8 @@ void PopMatrix(glm::mat4& M);
 // Declaração de várias funções utilizadas em main().  Essas estão definidas
 // logo após a definição de main() neste arquivo.
 void DrawCube(GLint render_as_black_uniform); // Desenha um cubo
+void DrawLine(GLint render_as_black_uniform);
+GLuint BuildLine();
 void BuildTrianglesAndAddToVirtualScene(ObjModel*); // Constrói representação de um ObjModel como malha de triângulos
 void ComputeNormals(ObjModel* model); // Computa normais de um ObjModel, caso não existam.
 void DrawVirtualObject(const char* object_name); // Desenha um objeto armazenado em g_VirtualScene
@@ -291,6 +293,7 @@ int main()
 
   // Construímos a representação de um triângulo (cubo original)
   GLuint vertex_array_object_id = BuildTriangles();
+  GLuint line_vao_id = BuildLine();
 
   // Carregamos modelos OBJ da pasta data/
   // ObjModel spheremodel("../../data/sphere.obj");
@@ -609,7 +612,7 @@ int main()
 
     // USP em primeira pessoa (fixo na tela)
     // Pegamos a matriz inversa da view para "desfazer" a rotação da câmera
-    glm::mat4 view_inverse = glm::inverse(view);
+    glm::mat4 view_inverse = Matrix_Inverse_View(view);
 
     // Extraímos apenas a parte de rotação (removendo a translação)
     glm::mat4 rotation_inverse = view_inverse;
@@ -637,6 +640,15 @@ int main()
 
     glUniform1i(g_object_id_uniform, 13);
     DrawVirtualObject("Cube");
+
+    // Desenha a linha de tiro
+    PushMatrix(model);
+    model = model * Matrix_Translate(0.0f, 2.0f, -0.5f); 
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glBindVertexArray(line_vao_id);
+    DrawLine(render_as_black_uniform);
+    glBindVertexArray(0);
+    PopMatrix(model);
 
     // Enviamos a nova matriz "model" para a placa de vídeo (GPU). Veja o
     // arquivo "shader_vertex.glsl".
@@ -1060,6 +1072,18 @@ void DrawCube(GLint render_as_black_uniform)
       );
 }
 
+void DrawLine(GLint render_as_black_uniform)
+{
+  glUniform1i(render_as_black_uniform, false);
+  glLineWidth(10.0f);
+  glDrawElements(
+      g_VirtualScene["line"].rendering_mode,
+      g_VirtualScene["line"].num_indices,
+      GL_UNSIGNED_INT,
+      (void*)(g_VirtualScene["line"].first_index * sizeof(GLuint))
+      );
+}
+
 // Constrói triângulos para futura renderização (cubo original do Lab 3)
 GLuint BuildTriangles()
 {
@@ -1227,6 +1251,80 @@ GLuint BuildTriangles()
 
   return vertex_array_object_id;
 }
+
+GLuint BuildLine()
+{
+    // Primeiro, definimos os atributos de cada vértice.
+    GLfloat model_coefficients[] = {
+        // Vértices para desenhar a linha de tiro
+        //    X      Y     Z     W
+        0.0f,  0.0f,  0.0f, 1.0f, // Ponto inicial da linha
+        // TODO: criar constante que define o "far plane" e utilizar na linha abaixo e na linha "float farplane = ..."
+        0.0f,  0.0f, -1000.0f, 1.0f, // Ponto final da linha (limitado pelo "far plane")
+    };
+
+    GLuint VBO_model_coefficients_id;
+    glGenBuffers(1, &VBO_model_coefficients_id);
+
+    GLuint vertex_array_object_id;
+    glGenVertexArrays(1, &vertex_array_object_id);
+
+    glBindVertexArray(vertex_array_object_id);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_model_coefficients_id);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(model_coefficients), NULL, GL_STATIC_DRAW);
+
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(model_coefficients), model_coefficients);
+
+    GLuint location = 0; // "(location = 0)" em "shader_vertex.glsl"
+    GLint  number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
+    glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glEnableVertexAttribArray(location);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Cores da linha (vermelho)
+    GLfloat color_coefficients[] = {
+        1.0f, 0.0f, 0.0f, 1.0f, // cor do vértice inicial
+        1.0f, 0.0f, 0.0f, 1.0f, // cor do vértice final
+    };
+    GLuint VBO_color_coefficients_id;
+    glGenBuffers(1, &VBO_color_coefficients_id);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_color_coefficients_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(color_coefficients), NULL, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(color_coefficients), color_coefficients);
+    location = 1; // "(location = 1)" em "shader_vertex.glsl"
+    number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
+    glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(location);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    GLuint indices[] = {
+        0, 1 // linha
+    };
+
+    SceneObject line;
+    line.name           = "line";
+    line.first_index    = 0;
+    line.num_indices    = 2;
+    line.rendering_mode = GL_LINES;
+    line.vertex_array_object_id = vertex_array_object_id;
+    g_VirtualScene["line"] = line;
+
+    GLuint indices_id;
+    glGenBuffers(1, &indices_id);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_id);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), NULL, GL_STATIC_DRAW);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(indices), indices);
+
+    glBindVertexArray(0);
+
+    return vertex_array_object_id;
+}
+
 
 // Carrega um Vertex Shader de um arquivo GLSL. Veja definição de LoadShader() abaixo.
 GLuint LoadShader_Vertex(const char* filename)

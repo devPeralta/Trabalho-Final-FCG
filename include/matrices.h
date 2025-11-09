@@ -252,6 +252,24 @@ glm::mat4 Matrix_Camera_View(glm::vec4 position_c, glm::vec4 view_vector, glm::v
       );
 }
 
+glm::mat4 Matrix_Inverse_View(glm::mat4 M)
+{
+    float t0 = M[3][0];
+    float t1 = M[3][1];
+    float t2 = M[3][2];
+
+    float t_prime_0 = -(M[0][0] * t0 + M[0][1] * t1 + M[0][2] * t2);
+    float t_prime_1 = -(M[1][0] * t0 + M[1][1] * t1 + M[1][2] * t2);
+    float t_prime_2 = -(M[2][0] * t0 + M[2][1] * t1 + M[2][2] * t2);
+
+    return Matrix(
+        M[0][0] , M[0][1] , M[0][2] , t_prime_0 ,
+        M[1][0] , M[1][1] , M[1][2] , t_prime_1 ,
+        M[2][0] , M[2][1] , M[2][2] , t_prime_2 ,
+        0.0f    , 0.0f    , 0.0f    , 1.0f
+    );
+}
+
 // Matriz de projeção paralela ortográfica
 glm::mat4 Matrix_Orthographic(float l, float r, float b, float t, float n, float f)
 {

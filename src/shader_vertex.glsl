@@ -1,22 +1,22 @@
 #version 330 core
 
 // ENTRADAS
-layout (location = 0) in vec4 model_coefficients;   // Posição (do robô E do coelho)
-layout (location = 1) in vec4 color_in;           // Cor (APENAS do robô)
-layout (location = 2) in vec2 texture_coefficients; // (Mantido, mas não usado)
-layout (location = 3) in vec4 normal_coefficients;  // Normal (APENAS do coelho)
+layout (location = 0) in vec4 model_coefficients;
+layout (location = 1) in vec4 color_in;
+layout (location = 2) in vec2 texture_coefficients;
+layout (location = 3) in vec4 normal_coefficients;
 
 // UNIFORMS
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-uniform bool render_as_black; // Flag para as arestas do robô
+uniform bool render_as_black;
 
 // SAÍDAS
 out vec4 position_world;
 out vec4 normal;
-out vec4 vertex_color;      // Passa a cor do robô
-flat out int v_render_as_black_int; // MODIFICADO: Era "bool"
+out vec4 vertex_color;
+flat out int v_render_as_black_int;
 
 void main()
 {
