@@ -1,0 +1,3 @@
+D:/Trabalho-Final-FCG/build/CMakeFiles/main.dir
+D:/Trabalho-Final-FCG/build/CMakeFiles/edit_cache.dir
+D:/Trabalho-Final-FCG/build/CMakeFiles/rebuild_cache.dir
