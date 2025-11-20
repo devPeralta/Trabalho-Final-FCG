@@ -107,6 +107,7 @@ void PopMatrix(glm::mat4& M);
 void DrawCube(GLint render_as_black_uniform); // Desenha um cubo
 void DrawLine(GLint render_as_black_uniform);
 GLuint BuildLine();
+GLuint BuildPlane();
 void BuildTrianglesAndAddToVirtualScene(ObjModel*); // Constrói representação de um ObjModel como malha de triângulos
 void ComputeNormals(ObjModel* model); // Computa normais de um ObjModel, caso não existam.
 void DrawVirtualObject(const char* object_name); // Desenha um objeto armazenado em g_VirtualScene
@@ -294,6 +295,7 @@ int main()
   // Construímos a representação de um triângulo (cubo original)
   GLuint vertex_array_object_id = BuildTriangles();
   GLuint line_vao_id = BuildLine();
+  GLuint plane_vao_id = BuildPlane();
 
   // Carregamos modelos OBJ da pasta data/
   // ObjModel spheremodel("../../data/sphere.obj");
@@ -308,9 +310,9 @@ int main()
   ComputeNormals(&uspmodel);
   BuildTrianglesAndAddToVirtualScene(&uspmodel);
 
-  // ObjModel cowmodel("../../data/cow.obj");
-  // ComputeNormals(&cowmodel);
-  // BuildTrianglesAndAddToVirtualScene(&cowmodel);
+  ObjModel cowmodel("../../data/cow.obj");
+  ComputeNormals(&cowmodel);
+  BuildTrianglesAndAddToVirtualScene(&cowmodel);
 
   // Inicializamos o código para renderização de texto.
   TextRendering_Init();
@@ -327,7 +329,7 @@ int main()
   glEnable(GL_DEPTH_TEST);
 
   // Habilitamos o Backface Culling. Veja slides 8-13 do documento Aula_02_Fundamentos_Matematicos.pdf, slides 23-34 do documento Aula_13_Clipping_and_Culling.pdf e slides 112-123 do documento Aula_14_Laboratorio_3_Revisao.pdf.
-  glEnable(GL_CULL_FACE);
+  // glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
 
@@ -354,6 +356,20 @@ int main()
     // os shaders de vértice e fragmentos).
     glUseProgram(g_GpuProgramID);
 
+    glm::mat4 model = Matrix_Identity(); // Transformação inicial = identidade.
+
+    // Desenha o chão
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, 4);
+    glBindVertexArray(plane_vao_id);
+    glDrawElements(
+        g_VirtualScene["plane"].rendering_mode,
+        g_VirtualScene["plane"].num_indices,
+        GL_UNSIGNED_INT,
+        (void*)0
+    );
+    glBindVertexArray(0);
+
     // "Ligamos" o VAO. Informamos que queremos utilizar os atributos de
     // vértices apontados pelo VAO criado pela função BuildTriangles(). Veja
     // comentários detalhados dentro da definição de BuildTriangles().
@@ -373,13 +389,17 @@ int main()
     glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
     glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
     glm::vec4 u_vector = crossproduct(camera_up_vector, -camera_view_vector);
+    u_vector.y = 0;
+
+    glm::vec4 w_vector = camera_view_vector;
+    w_vector.y = 0;
 
     if(tecla_W_pressionada)
-      camera_position_c += camera_view_vector * 0.05f;
+      camera_position_c += w_vector * 0.05f;
     if(tecla_A_pressionada)
       camera_position_c -= u_vector * 0.05f;
     if(tecla_S_pressionada)
-      camera_position_c -= camera_view_vector * 0.05f;
+      camera_position_c -= w_vector * 0.05f;
     if(tecla_D_pressionada)
       camera_position_c += u_vector * 0.05f;
 
@@ -422,184 +442,56 @@ int main()
     glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
     glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-    // NOTE: TAREFAS DO LABORATÓRIO 3
+    const float angulo_90_rad = 1.57079632679f;
 
-    // Cada cópia do cubo possui uma matriz de modelagem independente,
-    // já que cada cópia estará em uma posição (rotação, escala, ...)
-    // diferente em relação ao espaço global (World Coordinates). Veja
-    // slides 2-14 e 184-190 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
+    // PAREDE EXTERNA PRINCIPAL
+    model = Matrix_Identity();
+    glUniform1i(g_object_id_uniform, 50);
+    model = model * Matrix_Translate(g_TorsoPositionX, g_TorsoPositionY - 0.5f , 0.0f);
+    PushMatrix(model);
+    model = model * Matrix_Scale(100.0f, -3.0f, 0.5f);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    DrawCube(render_as_black_uniform);
+    PopMatrix(model);
+
+    // PAREDE EXTERNA COPIADA
+    PushMatrix(model);
+    model = model * Matrix_Translate(50.0f, 0.0f, 50.0f);
+    model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+    model = model * Matrix_Scale(100.0f, -3.0f, 0.5f);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    DrawCube(render_as_black_uniform);
+    PopMatrix(model);
+
+    // PAREDE EXTERNA COPIADA 2
+    PushMatrix(model);
+    model = model * Matrix_Translate(-50.0f, 0.0f, 50.0f);
+    model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+    model = model * Matrix_Scale(100.0f, -3.0f, 0.5f);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    DrawCube(render_as_black_uniform);
+    PopMatrix(model);
+
+    PushMatrix(model);
+    model = model * Matrix_Translate(0.0f, 0.0f, 100.0f);
+    // model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+    model = model * Matrix_Scale(100.0f, -3.0f, 0.5f);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    DrawCube(render_as_black_uniform);
+    PopMatrix(model);
+
+    // PushMatrix(model);
+    // model = model * Matrix_Translate(-2.0f, 0.0f, 0.0f);
+    // glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    // DrawCube(render_as_black_uniform); 
     //
-    // Entretanto, neste laboratório as matrizes de modelagem dos cubos
-    // serão construídas de maneira hierárquica, tal que operações em
-    // alguns objetos influenciem outros objetos. Por exemplo: ao
-    // transladar o torso, a cabeça deve se movimentar junto.
-    // Veja slides 243-273 do documento Aula_08_Sistemas_de_Coordenadas.pdf
-
-    glm::mat4 model = Matrix_Identity(); // Transformação inicial = identidade.
-
-    glUniform1i(g_object_id_uniform, 99);
-
-    // Translação inicial do torso
-    model = model * Matrix_Translate(g_TorsoPositionX - 1.0f, g_TorsoPositionY + 1.0f, 0.0f);
-    // Guardamos matriz model atual na pilha
-    PushMatrix(model);
-    // Atualizamos a matriz model (multiplicação à direita) para fazer um escalamento do torso
-    model = model * Matrix_Scale(0.8f, 1.0f, 0.2f);
-    // Enviamos a matriz "model" para a placa de vídeo (GPU). Veja o
-    // arquivo "shader_vertex.glsl", onde esta é efetivamente
-    // aplicada em todos os pontos.
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    // Desenhamos um cubo. Esta renderização irá executar o Vertex
-    // Shader definido no arquivo "shader_vertex.glsl", e o mesmo irá
-    // utilizar as matrizes "model", "view" e "projection" definidas
-    // acima e já enviadas para a placa de vídeo (GPU).
-    DrawCube(render_as_black_uniform); // #### TORSO
-                                       // Tiramos da pilha a matriz model guardada anteriormente
-    PopMatrix(model);
-
-    PushMatrix(model);
-    model = model * Matrix_Translate(0.0f, 0.05f, 0.0f);
-    model = model * Matrix_Scale(0.3f, -0.3f, 0.3f);
-
-    model = model // Atualizamos matriz model (multiplicação à direita) com a rotação do braço direito
-      * Matrix_Rotate_Z(-g_AngleZ)  // TERCEIRO rotação Z de Euler
-      * Matrix_Rotate_Y(-g_AngleY)  // SEGUNDO rotação Y de Euler
-      * Matrix_Rotate_X(g_AngleX); // PRIMEIRO rotação X de Euler
-                                   //
-                                   // Enviamos a matriz "model" para a placa de vídeo (GPU). Veja o
-                                   // arquivo "shader_vertex.glsl", onde esta é efetivamente
-                                   // aplicada em todos os pontos.
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    // Desenhamos um cubo. Esta renderização irá executar o Vertex
-    // Shader definido no arquivo "shader_vertex.glsl", e o mesmo irá
-    // utilizar as matrizes "model", "view" e "projection" definidas
-    // acima e já enviadas para a placa de vídeo (GPU).
-    DrawCube(render_as_black_uniform); // #### CABEÇA
-                                       // Tiramos da pilha a matriz model guardada anteriormente
-    PopMatrix(model);
-
-    // BRAÇO DIREITO
-    PushMatrix(model);
-    model = model * Matrix_Translate(-0.55f, 0.0f, 0.0f);
-    PushMatrix(model);
-    model = model
-      * Matrix_Rotate_Z(g_AngleZ)
-      * Matrix_Rotate_Y(g_AngleY)
-      * Matrix_Rotate_X(g_AngleX);
-    PushMatrix(model);
-    model = model * Matrix_Scale(0.2f, 0.6f, 0.2f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform);
-    PopMatrix(model);
-
-    // ANTEBRAÇO DIREITO
-    PushMatrix(model);
-    model = model * Matrix_Translate(0.0f, -0.65f, 0.0f);
-    model = model
-      * Matrix_Rotate_Z(g_ForearmAngleZ)
-      * Matrix_Rotate_X(g_ForearmAngleX);
-    PushMatrix(model);
-    model = model * Matrix_Scale(0.2f, 0.6f, 0.2f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform);
-    PopMatrix(model);
-
-    // MÃO DIREITA
-    PushMatrix(model); 
-    model = model * Matrix_Translate(0.0f, -0.65f, 0.0f);
-    model = model * Matrix_Scale(0.2f, 0.1f, 0.2f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model)); 
-    DrawCube(render_as_black_uniform);
-    PopMatrix(model); 
-    PopMatrix(model);
-    PopMatrix(model);
-    PopMatrix(model);
-
-    // BRAÇO ESQUERDO
-    PushMatrix(model);
-    model = model * Matrix_Translate(0.55f, 0.0f, 0.0f);
-    PushMatrix(model);
-    model = model
-      * Matrix_Rotate_Z(-g_AngleZ)
-      * Matrix_Rotate_Y(g_AngleY)
-      * Matrix_Rotate_X(g_AngleX);
-    PushMatrix(model);
-    model = model * Matrix_Scale(0.2f, 0.6f, 0.2f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform);
-    PopMatrix(model);
-
-    // ANTEBRAÇO ESQUERDO
-    PushMatrix(model);
-    model = model * Matrix_Translate(0.0f, -0.65f, 0.0f);
-    model = model
-      * Matrix_Rotate_Z(-g_ForearmAngleZ)
-      * Matrix_Rotate_X(g_ForearmAngleX);
-    PushMatrix(model);
-    model = model * Matrix_Scale(0.2f, 0.6f, 0.2f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform);
-    PopMatrix(model);
-
-    // MÃO ESQUERDA
-    PushMatrix(model);
-    model = model * Matrix_Translate(0.0f, -0.65f, 0.0f);
-    model = model * Matrix_Scale(0.2f, 0.1f, 0.2f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform);
-    PopMatrix(model);
-    PopMatrix(model);
-    PopMatrix(model);
-    PopMatrix(model);
-
-    // COXA ESQUERDA
-    PushMatrix(model);
-    model = model * Matrix_Translate(0.2f, -1.05f, 0.0f);
-    model = model * Matrix_Scale(0.3f, 0.75f, 0.3f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform); 
-    PopMatrix(model);
-
-    // COXA DIREITA
-    PushMatrix(model);
-    model = model * Matrix_Translate(-0.2f, -1.05f, 0.0f);
-    model = model * Matrix_Scale(0.3f, 0.75f, 0.3f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform); 
-    PopMatrix(model);
-
-    // TORNOZELO ESQUERDO 
-    PushMatrix(model);
-    model = model * Matrix_Translate(0.2f, -1.85f, 0.0f);
-    model = model * Matrix_Scale(0.25f, 0.75f, 0.25f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform); 
-    PopMatrix(model);
-
-    // TORNOZELO DIREITO
-    PushMatrix(model);
-    model = model * Matrix_Translate(-0.2f, -1.85f, 0.0f);
-    model = model * Matrix_Scale(0.25f, 0.75f, 0.25f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform); 
-    PopMatrix(model);
-
-    // PE ESQUERDO
-    PushMatrix(model);
-    model = model * Matrix_Translate(-0.2f, -2.65f, 0.1f);
-    model = model * Matrix_Scale(0.25f, 0.1f, 0.45f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform); 
-    PopMatrix(model);
-
-    // PE DIREITO
-    PushMatrix(model);
-    model = model * Matrix_Translate(0.2f, -2.65f, 0.1f);
-    model = model * Matrix_Scale(0.25f, 0.1f, 0.45f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform); 
-    PopMatrix(model);
-
+    // PushMatrix(model);
+    // model = model * Matrix_Translate(-2.0f, 0.0f, 0.0f);
+    // glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    // DrawCube(render_as_black_uniform); 
+    // PopMatrix(model);
+    
+    
     // Neste ponto a matriz model recuperada é a matriz inicial (translação do torso)
 
     // Agora queremos desenhar os eixos XYZ de coordenadas GLOBAIS.
@@ -640,6 +532,12 @@ int main()
 
     glUniform1i(g_object_id_uniform, 13);
     DrawVirtualObject("Cube");
+
+    // model = Matrix_Identity();
+    // model = model * Matrix_Translate(2.5f, 2.5f, 0.0f); // Offset local
+    // glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    // glUniform1i(g_object_id_uniform, USP);
+    // DrawVirtualObject("cowcow");
 
     // Desenha a linha de tiro
     PushMatrix(model);
@@ -1168,6 +1066,35 @@ GLuint BuildTriangles()
   glEnableVertexAttribArray(location);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+  GLfloat normal_coefficients[] = {
+    // Vértices de um cubo
+    //    X      Y     Z     W
+    -0.5f,  0.0f,  0.5f, 0.0f, // normal do vértice 0
+    -0.5f, -1.0f,  0.5f, 0.0f, // normal do vértice 1
+    0.5f, -1.0f,  0.5f, 0.0f, // normal do vértice 2
+    0.5f,  0.0f,  0.5f, 0.0f, // normal do vértice 3
+    -0.5f,  0.0f, -0.5f, 0.0f, // normal do vértice 4
+    -0.5f, -1.0f, -0.5f, 0.0f, // normal do vértice 5
+    0.5f, -1.0f, -0.5f, 0.0f, // normal do vértice 6
+    0.5f,  0.0f, -0.5f, 0.0f, // normal do vértice 7
+    // As normais para os eixos não importam, pois não são usadas para iluminação
+    0.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 0.0f,
+  };
+  GLuint VBO_normal_coefficients_id;
+  glGenBuffers(1, &VBO_normal_coefficients_id);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_normal_coefficients_id);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(normal_coefficients), normal_coefficients, GL_STATIC_DRAW);
+  location = 3; // "(location = 3)" em "shader_vertex.glsl"
+  number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
+  glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(location);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
   GLuint indices[] = {
     // Definimos os índices dos vértices que definem as FACES de um cubo
     // através de 12 triângulos que serão desenhados com o modo de renderização
@@ -1325,6 +1252,81 @@ GLuint BuildLine()
     return vertex_array_object_id;
 }
 
+GLuint BuildPlane()
+{
+    // Vértices do plano
+    GLfloat model_coefficients[] = {
+        //    X      Y     Z     W
+        -500.0f, -0.5f, -500.0f, 1.0f,
+         500.0f, -0.5f, -500.0f, 1.0f,
+         500.0f, -0.5f,  500.0f, 1.0f,
+        -500.0f, -0.5f,  500.0f, 1.0f,
+    };
+
+    // Cores do plano (cinza)
+    GLfloat color_coefficients[] = {
+        0.5f, 0.5f, 0.5f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f,
+    };
+
+    // Normais do plano
+    GLfloat normal_coefficients[] = {
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+    };
+
+    // Índices para formar dois triângulos
+    GLuint indices[] = {
+        0, 1, 2,
+        0, 2, 3,
+    };
+
+    GLuint vertex_array_object_id;
+    glGenVertexArrays(1, &vertex_array_object_id);
+    glBindVertexArray(vertex_array_object_id);
+
+    GLuint VBO_model_coefficients_id;
+    glGenBuffers(1, &VBO_model_coefficients_id);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_model_coefficients_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(model_coefficients), model_coefficients, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    GLuint VBO_color_coefficients_id;
+    glGenBuffers(1, &VBO_color_coefficients_id);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_color_coefficients_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(color_coefficients), color_coefficients, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
+
+    GLuint VBO_normal_coefficients_id;
+    glGenBuffers(1, &VBO_normal_coefficients_id);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_normal_coefficients_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(normal_coefficients), normal_coefficients, GL_STATIC_DRAW);
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 0, 0); // location 3
+    glEnableVertexAttribArray(3);
+
+    GLuint indices_id;
+    glGenBuffers(1, &indices_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_id);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    SceneObject plane;
+    plane.name = "plane";
+    plane.first_index = 0;
+    plane.num_indices = 6;
+    plane.rendering_mode = GL_TRIANGLES;
+    plane.vertex_array_object_id = vertex_array_object_id;
+    g_VirtualScene["plane"] = plane;
+
+    glBindVertexArray(0);
+
+    return vertex_array_object_id;
+}
 
 // Carrega um Vertex Shader de um arquivo GLSL. Veja definição de LoadShader() abaixo.
 GLuint LoadShader_Vertex(const char* filename)

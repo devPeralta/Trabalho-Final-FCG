@@ -58,6 +58,7 @@ void main()
         #define COW 3
         #define PLANE  4
         #define SPHERE 5
+        #define WALL 50
 
         if ( object_id == SPHERE )
         {
@@ -65,6 +66,13 @@ void main()
             Ks = vec3(0.0, 0.0, 0.0);
             Ka = vec3(0.4, 0.2, 0.04);
             q = 1.0;
+        }
+        else if ( object_id == WALL )
+        {
+            Kd = vec3(0.7, 0.7, 0.7); // Cinza claro
+            Ks = vec3(0.1, 0.1, 0.1);
+            Ka = vec3(0.3, 0.3, 0.3);
+            q = 10.0;
         }
         else if ( object_id == BUNNY )
         {
@@ -75,10 +83,10 @@ void main()
         }
         else if ( object_id == PLANE )
         {
-            Kd = vec3(0.2, 0.2, 0.2);
-            Ks = vec3(0.3, 0.3, 0.3);
-            Ka = vec3(0.0, 0.0, 0.0);
-            q = 20.0;
+            Kd = vec3(0.25, 0.25, 0.27); // Cinza azulado suave
+            Ks = vec3(0.1, 0.1, 0.1);    // Pouco brilho
+            Ka = vec3(0.15, 0.15, 0.17); // Luz ambiente suave
+            q = 10.0;
         }
         else if ( object_id == USP_PART1 )
         {
