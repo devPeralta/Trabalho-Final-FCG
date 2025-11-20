@@ -504,7 +504,7 @@ int main()
 
     // USP em primeira pessoa (fixo na tela)
     // Pegamos a matriz inversa da view para "desfazer" a rotação da câmera
-    glm::mat4 view_inverse = glm::inverse(view);
+    glm::mat4 view_inverse = Matrix_Inverse_View(view);
 
     // Extraímos apenas a parte de rotação (removendo a translação)
     glm::mat4 rotation_inverse = view_inverse;
