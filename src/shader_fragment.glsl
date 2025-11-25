@@ -4,6 +4,7 @@
 in vec4 position_world;
 in vec4 normal;
 in vec4 vertex_color;      // Cor do vértice (do robô)
+in vec2 v_TexCoords;       // Coordenadas de textura vindas do Vertex Shader
 flat in int v_render_as_black_int; // MODIFICADO: Era "bool"
 
 // UNIFORMS
@@ -11,6 +12,10 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform int object_id;
+uniform sampler2D TextureImage0; // Textura da Terra de dia
+uniform sampler2D TextureImage1; // Textura da Terra de noite
+uniform sampler2D TextureImage2;
+uniform sampler2D TextureImage3;
 
 // SAÍDA
 out vec4 color;
@@ -69,9 +74,10 @@ void main()
         }
         else if ( object_id == WALL )
         {
-            Kd = vec3(0.7, 0.7, 0.7); // Cinza claro
+            vec2 procedural_uv = position_world.xy * 0.1;
+            Kd = texture(TextureImage2, procedural_uv).rgb;
             Ks = vec3(0.1, 0.1, 0.1);
-            Ka = vec3(0.3, 0.3, 0.3);
+            Ka = Kd * 0.5;
             q = 10.0;
         }
         else if ( object_id == BUNNY )
@@ -83,45 +89,17 @@ void main()
         }
         else if ( object_id == PLANE )
         {
-            Kd = vec3(0.25, 0.25, 0.27); // Cinza azulado suave
-            Ks = vec3(0.1, 0.1, 0.1);    // Pouco brilho
-            Ka = vec3(0.15, 0.15, 0.17); // Luz ambiente suave
+            Kd = vec3(0.25, 0.25, 0.27); // Cor fixa para o chão
+            Ks = vec3(0.1, 0.1, 0.1);
+            Ka = vec3(0.15, 0.15, 0.17);
             q = 10.0;
         }
-        else if ( object_id == USP_PART1 )
+        else if ( object_id >= USP_PART1 && object_id <= USP_PART4 )
         {
-            Kd = vec3(0.1, 0.1, 0.1); // Cinza escuro (corpo principal)
-            Ks = vec3(0.5, 0.5, 0.5);
-            Ka = vec3(0.05, 0.05, 0.05);
-            q = 50.0;
-        }
-        else if ( object_id == USP_PART2 )
-        {
-            Kd = vec3(0.8, 0.6, 0.2); // Dourado (detalhes)
-            Ks = vec3(1.0, 1.0, 0.8);
-            Ka = vec3(0.4, 0.3, 0.1);
-            q = 100.0;
-        }
-        else if ( object_id == USP_PART3 )
-        {
-            Kd = vec3(0.3, 0.3, 0.3); // Cinza médio
-            Ks = vec3(0.6, 0.6, 0.6);
-            Ka = vec3(0.15, 0.15, 0.15);
-            q = 60.0;
-        }
-        else if ( object_id == USP_PART4 )
-        {
-            Kd = vec3(0.05, 0.05, 0.05); // Preto (grip/cabo)
-            Ks = vec3(0.1, 0.1, 0.1);
-            Ka = vec3(0.02, 0.02, 0.02);
-            q = 20.0;
-        }
-        else if ( object_id == COW)
-        {
-            Kd = vec3(0.5, 0.0, 0.5); // Roxo difuso
-            Ks = vec3(1.0, 1.0, 1.0); // Brilho branco
-            Ka = vec3(0.2, 0.0, 0.2); // Roxo ambiente
-            q = 50.0;                 // Bem brilhante
+            Kd = texture(TextureImage3, v_TexCoords).rgb;
+            Ks = vec3(0.8, 0.8, 0.8);
+            Ka = Kd * 0.5;
+            q = 32.0;
         }
         else
         {

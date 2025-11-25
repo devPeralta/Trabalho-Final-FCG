@@ -16,7 +16,12 @@ uniform bool render_as_black;
 out vec4 position_world;
 out vec4 normal;
 out vec4 vertex_color;
+out vec2 v_TexCoords; // Adicionado para passar UVs
 flat out int v_render_as_black_int;
+
+uniform sampler2D TextureImage0;
+uniform sampler2D TextureImage1;
+uniform sampler2D TextureImage2;
 
 void main()
 {
@@ -32,6 +37,7 @@ void main()
 
     // Passa os atributos do robô para o fragment shader
     vertex_color = color_in; // Passa a cor da location = 1
+    v_TexCoords = texture_coefficients; // Adicionado para passar UVs
     
     // MODIFICADO: Converte o bool para int
     v_render_as_black_int = render_as_black ? 1 : 0;
