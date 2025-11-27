@@ -188,6 +188,8 @@ float g_AngleZ = 0.0f;
 bool g_LeftMouseButtonPressed = false;
 bool g_RightMouseButtonPressed = false; // Análogo para botão direito do mouse
 bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mouse
+bool g_MouseCaptured = true;
+bool g_firstMouse = true;
 
 // Teclas que definem a movimentação de camera livre
 bool tecla_W_pressionada = false;
@@ -280,6 +282,9 @@ int main()
 
   // Indicamos que as chamadas OpenGL deverão renderizar nesta janela
   glfwMakeContextCurrent(window);
+
+  // Capturamos o cursor do mouse
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   // Carregamento de todas funções definidas por OpenGL 3.3, utilizando a
   // biblioteca GLAD.
@@ -396,14 +401,13 @@ int main()
     // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
     // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
     // e ScrollCallback().
-    float r = g_CameraDistance;
-    float y = r*sin(g_CameraPhi);
-    float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
-    float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
+    float y = sin(g_CameraPhi);
+    float z = cos(g_CameraPhi)*cos(g_CameraTheta);
+    float x = cos(g_CameraPhi)*sin(g_CameraTheta);
 
     // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
     glm::vec4 camera_lookat_l = camera_position_c - glm::vec4(x,y,z,0.0f);
-    glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
+    glm::vec4 camera_view_vector = glm::normalize(camera_lookat_l - camera_position_c); // Vetor "view", sentido para onde a câmera está virada
     glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
     glm::vec4 u_vector = crossproduct(camera_up_vector, -camera_view_vector);
     u_vector.y = 0;
@@ -1604,12 +1608,11 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
   {
-    glfwGetCursorPos(window, &g_LastCursorPosX, &g_LastCursorPosY);
-    g_LeftMouseButtonPressed = true;
+    // g_LeftMouseButtonPressed = true;
   }
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
   {
-    g_LeftMouseButtonPressed = false;
+    // g_LeftMouseButtonPressed = false;
   }
   if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
   {
@@ -1635,50 +1638,60 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 // cima da janela OpenGL.
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 {
-  if (g_LeftMouseButtonPressed)
-  {
-    float dx = xpos - g_LastCursorPosX;
-    float dy = ypos - g_LastCursorPosY;
+    if (g_MouseCaptured)
+    {
+        if (g_firstMouse)
+        {
+            g_LastCursorPosX = xpos;
+            g_LastCursorPosY = ypos;
+            g_firstMouse = false;
+            return;
+        }
 
-    g_CameraTheta -= 0.01f*dx;
-    g_CameraPhi   += 0.01f*dy;
+        float dx = xpos - g_LastCursorPosX;
+        float dy = ypos - g_LastCursorPosY;
 
-    float phimax = 3.141592f/2;
-    float phimin = -phimax;
+        g_LastCursorPosX = xpos;
+        g_LastCursorPosY = ypos;
 
-    if (g_CameraPhi > phimax)
-      g_CameraPhi = phimax;
+        float sensitivity = 0.005f;
+        g_CameraTheta -= dx * sensitivity;
+        g_CameraPhi   += dy * sensitivity;
 
-    if (g_CameraPhi < phimin)
-      g_CameraPhi = phimin;
+        const float phimax = 3.141592f/2.0f - 0.1f;
+        const float phimin = -phimax;
 
-    g_LastCursorPosX = xpos;
-    g_LastCursorPosY = ypos;
-  }
+        if (g_CameraPhi > phimax)
+            g_CameraPhi = phimax;
+        else if (g_CameraPhi < phimin)
+            g_CameraPhi = phimin;
+    }
+    else
+    {
+        if (g_RightMouseButtonPressed)
+        {
+            float dx = xpos - g_LastCursorPosX;
+            float dy = ypos - g_LastCursorPosY;
 
-  if (g_RightMouseButtonPressed)
-  {
-    float dx = xpos - g_LastCursorPosX;
-    float dy = ypos - g_LastCursorPosY;
+            g_ForearmAngleZ -= 0.01f*dx;
+            g_ForearmAngleX += 0.01f*dy;
 
-    g_ForearmAngleZ -= 0.01f*dx;
-    g_ForearmAngleX += 0.01f*dy;
+            g_LastCursorPosX = xpos;
+            g_LastCursorPosY = ypos;
+        }
 
-    g_LastCursorPosX = xpos;
-    g_LastCursorPosY = ypos;
-  }
+        if (g_MiddleMouseButtonPressed)
+        {
+            float dx = xpos - g_LastCursorPosX;
+            float dy = ypos - g_LastCursorPosY;
 
-  if (g_MiddleMouseButtonPressed)
-  {
-    float dx = xpos - g_LastCursorPosX;
-    float dy = ypos - g_LastCursorPosY;
+            g_TorsoPositionX += 0.01f*dx;
+            g_TorsoPositionY -= 0.01f*dy;
 
-    g_TorsoPositionX += 0.01f*dx;
-    g_TorsoPositionY -= 0.01f*dy;
-
-    g_LastCursorPosX = xpos;
-    g_LastCursorPosY = ypos;
-  }
+            g_LastCursorPosX = xpos;
+            g_LastCursorPosY = ypos;
+        }
+    }
 }
 
 // Função callback chamada sempre que o usuário movimenta a "rodinha" do mouse.
@@ -1751,6 +1764,14 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
   if (key == GLFW_KEY_H && action == GLFW_PRESS)
   {
     g_ShowInfoText = !g_ShowInfoText;
+  }
+
+  // Se o usuário apertar a tecla C, alternamos a captura do mouse
+  if (key == GLFW_KEY_C && action == GLFW_PRESS)
+  {
+    g_MouseCaptured = !g_MouseCaptured;
+    glfwSetInputMode(window, GLFW_CURSOR, g_MouseCaptured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    g_firstMouse = true; // Evita que a câmera salte ao recapturar o mouse
   }
 
   if (key == GLFW_KEY_W)
