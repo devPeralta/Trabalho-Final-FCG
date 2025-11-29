@@ -308,11 +308,13 @@ int main()
   glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
   glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
   glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
+  glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
   glUseProgram(0);
   LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
   LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
   LoadTextureImage("../../data/red_brick_pavers_diff_4k.jpg");          // TextureImage2
   LoadTextureImage("../../data/usp_metal.jpg");          // TextureImage3
+  LoadTextureImage("../../data/target.jpg");
 
   // Construímos a representação de um triângulo (cubo original)
   GLuint vertex_array_object_id = BuildTriangles();
@@ -335,6 +337,10 @@ int main()
   ObjModel cowmodel("../../data/cow.obj");
   ComputeNormals(&cowmodel);
   BuildTrianglesAndAddToVirtualScene(&cowmodel);
+
+  ObjModel targetmodel("../../data/target.obj");
+  ComputeNormals(&targetmodel);
+  BuildTrianglesAndAddToVirtualScene(&targetmodel);
 
   // Inicializamos o código para renderização de texto.
   TextRendering_Init();
@@ -504,16 +510,25 @@ int main()
     // PushMatrix(model);
     // model = model * Matrix_Translate(-2.0f, 0.0f, 0.0f);
     // glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    // DrawCube(render_as_black_uniform); 
+    // DrawCube(render_as_black_uniform);
     //
     // PushMatrix(model);
     // model = model * Matrix_Translate(-2.0f, 0.0f, 0.0f);
     // glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    // DrawCube(render_as_black_uniform); 
+    // DrawCube(render_as_black_uniform);
     // PopMatrix(model);
-    
-    
+
+
     // Neste ponto a matriz model recuperada é a matriz inicial (translação do torso)
+
+    // Desenha o alvo
+    model = Matrix_Identity();
+    model = model * Matrix_Translate(5.0f, -0.5f, 20.0f);
+    model = model * Matrix_Rotate_X(-1.57079632679f); // Rotaciona para ficar em pé
+    model = model * Matrix_Scale(0.02f, 0.02f, 0.02f);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, 6); // ID do alvo
+    DrawVirtualObject("10480_archery_target");
 
     // Agora queremos desenhar os eixos XYZ de coordenadas GLOBAIS.
     // Para tanto, colocamos a matriz de modelagem igual à identidade.
@@ -553,12 +568,6 @@ int main()
 
     glUniform1i(g_object_id_uniform, 13);
     DrawVirtualObject("Cube");
-
-    // model = Matrix_Identity();
-    // model = model * Matrix_Translate(2.5f, 2.5f, 0.0f); // Offset local
-    // glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    // glUniform1i(g_object_id_uniform, USP);
-    // DrawVirtualObject("cowcow");
 
     // Desenha a linha de tiro
     PushMatrix(model);

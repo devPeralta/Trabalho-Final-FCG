@@ -16,6 +16,7 @@ uniform sampler2D TextureImage0; // Textura da Terra de dia
 uniform sampler2D TextureImage1; // Textura da Terra de noite
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
+uniform sampler2D TextureImage4;
 
 // SAÍDA
 out vec4 color;
@@ -23,7 +24,7 @@ out vec4 color;
 void main()
 {
     // Caminho de renderização para o ROBÔ (ID 99)
-    if ( object_id == 99 ) 
+    if ( object_id == 99 )
     {
         // MODIFICADO: Checa se o int é 1
         if (v_render_as_black_int == 1)
@@ -36,19 +37,19 @@ void main()
         }
     }
     // CÓDIGO ORIGINAL: Caminho de renderização para ILUMINAÇÃO (Coelho, etc.)
-    else 
+    else
     {
         // Obtemos a posição da câmera
         vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
         vec4 camera_position = inverse(view) * origin;
-        
+
         // Vetores de iluminação
         vec4 p = position_world;
         vec4 n = normalize(normal);
         vec4 v = normalize(camera_position - p);
         vec4 l = v; // Luz na câmera
         vec4 r = -l + 2.0 * n * dot(n, l);
-        
+
         // Definição dos materiais
         vec3 Kd;
         vec3 Ks;
@@ -63,6 +64,7 @@ void main()
         #define COW 3
         #define PLANE  4
         #define SPHERE 5
+        #define TARGET 6
         #define WALL 50
 
         if ( object_id == SPHERE )
@@ -74,8 +76,18 @@ void main()
         }
         else if ( object_id == WALL )
         {
-            vec2 procedural_uv = position_world.xy * 0.1;
-            Kd = texture(TextureImage2, procedural_uv).rgb;
+            // Triplanar mapping
+            vec3 n = normalize(normal.xyz);
+            vec3 blend_weights = abs(n);
+            blend_weights = blend_weights / (blend_weights.x + blend_weights.y + blend_weights.z);
+
+            float scale = 0.1;
+            vec3 color_x = texture(TextureImage2, position_world.yz * scale).rgb;
+            vec3 color_y = texture(TextureImage2, position_world.xz * scale).rgb;
+            vec3 color_z = texture(TextureImage2, position_world.xy * scale).rgb;
+
+            Kd = color_x * blend_weights.x + color_y * blend_weights.y + color_z * blend_weights.z;
+
             Ks = vec3(0.1, 0.1, 0.1);
             Ka = Kd * 0.5;
             q = 10.0;
@@ -100,6 +112,13 @@ void main()
             Ks = vec3(0.8, 0.8, 0.8);
             Ka = Kd * 0.5;
             q = 32.0;
+        }
+        else if ( object_id == TARGET )
+        {
+            Kd = texture(TextureImage4, v_TexCoords).rgb;
+            Ks = vec3(0.1, 0.1, 0.1);
+            Ka = Kd * 0.5;
+            q = 10.0;
         }
         else
         {
