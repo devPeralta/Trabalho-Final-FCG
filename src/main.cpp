@@ -42,6 +42,7 @@
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
 #include "matrices.h"
+#include "collisions.h"
 #include <set>
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
@@ -365,6 +366,14 @@ int main()
 
   glm::vec4 camera_position_c  = glm::vec4(0.0f, 1.7f, 5.0f, 1.0f);
 
+  Sphere cameraSphere;
+  cameraSphere.radius = 0.5f;
+
+  Plane wall_front = {glm::vec3(0.0f, 0.0f, 1.0f), -99.75f};    // z = 99.75
+  Plane wall_back  = {glm::vec3(0.0f, 0.0f, -1.0f), 0.25f};     // z = 0.25
+  Plane wall_right = {glm::vec3(1.0f, 0.0f, 0.0f), -49.75f};    // x = 49.75
+  Plane wall_left  = {glm::vec3(-1.0f, 0.0f, 0.0f), -49.75f};   // x = -49.75
+
   // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
   while (!glfwWindowShouldClose(window))
   {
@@ -431,6 +440,18 @@ int main()
       camera_position_c -= w_vector * 0.05f;
     if(tecla_D_pressionada)
       camera_position_c += u_vector * 0.05f;
+
+    cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+
+    Plane walls[] = {wall_front, wall_back, wall_right, wall_left};
+    for (const auto& wall : walls) {
+        float signedDistance = glm::dot(wall.normal, cameraSphere.center) + wall.distance;
+        if (signedDistance > -cameraSphere.radius) {
+            float penetration = signedDistance + cameraSphere.radius;
+            cameraSphere.center -= wall.normal * penetration;
+            camera_position_c = glm::vec4(cameraSphere.center, 1.0f);
+        }
+    }
 
     // Computamos a matriz "View" utilizando os parâmetros da câmera para
     // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
