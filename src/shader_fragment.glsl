@@ -17,6 +17,7 @@ uniform sampler2D TextureImage1; // Textura da Terra de noite
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
 uniform sampler2D TextureImage4;
+uniform sampler2D TextureImage5;
 
 // SAÍDA
 out vec4 color;
@@ -62,7 +63,7 @@ void main()
         #define USP_PART3 12
         #define USP_PART4 13
         #define COW 3
-        #define PLANE  4
+        #define PLANE  7
         #define SPHERE 5
         #define TARGET 6
         #define WALL 50
@@ -101,9 +102,9 @@ void main()
         }
         else if ( object_id == PLANE )
         {
-            Kd = vec3(0.25, 0.25, 0.27); // Cor fixa para o chão
+            Kd = texture(TextureImage5, v_TexCoords).rgb;
             Ks = vec3(0.1, 0.1, 0.1);
-            Ka = vec3(0.15, 0.15, 0.17);
+            Ka = Kd * 0.5;
             q = 10.0;
         }
         else if ( object_id >= USP_PART1 && object_id <= USP_PART4 )

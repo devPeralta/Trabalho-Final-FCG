@@ -309,12 +309,14 @@ int main()
   glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
   glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
   glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
+  glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
   glUseProgram(0);
   LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
   LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
   LoadTextureImage("../../data/red_brick_pavers_diff_4k.jpg");          // TextureImage2
   LoadTextureImage("../../data/usp_metal.jpg");          // TextureImage3
   LoadTextureImage("../../data/target.jpg");
+  LoadTextureImage("../../data/patterned_cobblestone_diff_4k.jpg"); // TextureImage5
 
   // Construímos a representação de um triângulo (cubo original)
   GLuint vertex_array_object_id = BuildTriangles();
@@ -361,7 +363,7 @@ int main()
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
 
-  glm::vec4 camera_position_c  = glm::vec4(0.0f, 0.0f, 5.0f, 1.0f);
+  glm::vec4 camera_position_c  = glm::vec4(0.0f, 1.7f, 5.0f, 1.0f);
 
   // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
   while (!glfwWindowShouldClose(window))
@@ -388,7 +390,7 @@ int main()
 
     // Desenha o chão
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform1i(g_object_id_uniform, 4);
+    glUniform1i(g_object_id_uniform, 7);
     glBindVertexArray(plane_vao_id);
     glDrawElements(
         g_VirtualScene["plane"].rendering_mode,
@@ -476,7 +478,7 @@ int main()
     glUniform1i(g_object_id_uniform, 50);
     model = model * Matrix_Translate(g_TorsoPositionX, g_TorsoPositionY - 0.5f , 0.0f);
     PushMatrix(model);
-    model = model * Matrix_Scale(100.0f, -3.0f, 0.5f);
+    model = model * Matrix_Scale(100.0f, -10.0f, 0.5f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     DrawCube(render_as_black_uniform);
     PopMatrix(model);
@@ -485,7 +487,7 @@ int main()
     PushMatrix(model);
     model = model * Matrix_Translate(50.0f, 0.0f, 50.0f);
     model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
-    model = model * Matrix_Scale(100.0f, -3.0f, 0.5f);
+    model = model * Matrix_Scale(100.0f, -10.0f, 0.5f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     DrawCube(render_as_black_uniform);
     PopMatrix(model);
@@ -494,7 +496,7 @@ int main()
     PushMatrix(model);
     model = model * Matrix_Translate(-50.0f, 0.0f, 50.0f);
     model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
-    model = model * Matrix_Scale(100.0f, -3.0f, 0.5f);
+    model = model * Matrix_Scale(100.0f, -10.0f, 0.5f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     DrawCube(render_as_black_uniform);
     PopMatrix(model);
@@ -502,7 +504,7 @@ int main()
     PushMatrix(model);
     model = model * Matrix_Translate(0.0f, 0.0f, 100.0f);
     // model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
-    model = model * Matrix_Scale(100.0f, -3.0f, 0.5f);
+    model = model * Matrix_Scale(100.0f, -10.0f, 0.5f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     DrawCube(render_as_black_uniform);
     PopMatrix(model);
@@ -523,9 +525,9 @@ int main()
 
     // Desenha o alvo
     model = Matrix_Identity();
-    model = model * Matrix_Translate(5.0f, -0.5f, 20.0f);
+    model = model * Matrix_Translate(5.0f, -0.6f, 20.0f);
     model = model * Matrix_Rotate_X(-1.57079632679f); // Rotaciona para ficar em pé
-    model = model * Matrix_Scale(0.02f, 0.02f, 0.02f);
+    model = model * Matrix_Scale(0.015f, 0.015f, 0.015f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, 6); // ID do alvo
     DrawVirtualObject("10480_archery_target");
@@ -551,8 +553,8 @@ int main()
     model = Matrix_Identity();
     model = model * Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
     model = model * rotation_inverse; // Aplica a inversa da rotação
-    model = model * Matrix_Translate(0.4f, -0.4f, -0.8f); // Offset local
-    model = model * Matrix_Scale(0.1f, 0.1f, 0.1f);
+    model = model * Matrix_Translate(0.4f, -0.4f, -0.6f); // Offset local
+    model = model * Matrix_Scale(0.075f, 0.075f, 0.075f);
 
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, USP);
@@ -1345,6 +1347,14 @@ GLuint BuildPlane()
         -500.0f, -0.5f,  500.0f, 1.0f,
     };
 
+    // Coordenadas de textura do plano
+    GLfloat texture_coefficients[] = {
+        0.0f,  0.0f,
+        50.0f, 0.0f,
+        50.0f, 50.0f,
+        0.0f,  50.0f,
+    };
+
     // Cores do plano (cinza)
     GLfloat color_coefficients[] = {
         0.5f, 0.5f, 0.5f, 1.0f,
@@ -1377,6 +1387,13 @@ GLuint BuildPlane()
     glBufferData(GL_ARRAY_BUFFER, sizeof(model_coefficients), model_coefficients, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
+
+    GLuint VBO_texture_coefficients_id;
+    glGenBuffers(1, &VBO_texture_coefficients_id);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_texture_coefficients_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(texture_coefficients), texture_coefficients, GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(2);
 
     GLuint VBO_color_coefficients_id;
     glGenBuffers(1, &VBO_color_coefficients_id);
