@@ -8,6 +8,7 @@
 //                   LABORATÓRIO 3
 //
 
+#include <iostream>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -191,6 +192,11 @@ bool g_RightMouseButtonPressed = false; // Análogo para botão direito do mouse
 bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mouse
 bool g_MouseCaptured = true;
 bool g_firstMouse = true;
+
+glm::vec4 g_CameraPosition;
+glm::vec4 g_CameraViewVector;
+bool g_ShotHit = false;
+float g_ShotHitTimer = 0.0f;
 
 // Teclas que definem a movimentação de camera livre
 bool tecla_W_pressionada = false;
@@ -384,6 +390,12 @@ int main()
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
+    if (g_ShotHitTimer > 0.0f) {
+        g_ShotHitTimer -= deltaTime;
+    } else {
+        g_ShotHit = false;
+    }
+
     // Aqui executamos as operações de renderização
 
     // Definimos a cor do "fundo" do framebuffer como branco.  Tal cor é
@@ -431,12 +443,13 @@ int main()
 
     // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
     glm::vec4 camera_lookat_l = camera_position_c - glm::vec4(x,y,z,0.0f);
-    glm::vec4 camera_view_vector = glm::normalize(camera_lookat_l - camera_position_c); // Vetor "view", sentido para onde a câmera está virada
+    g_CameraPosition = camera_position_c;
+    g_CameraViewVector = glm::normalize(camera_lookat_l - camera_position_c); // Vetor "view", sentido para onde a câmera está virada
     glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
-    glm::vec4 u_vector = crossproduct(camera_up_vector, -camera_view_vector);
+    glm::vec4 u_vector = crossproduct(camera_up_vector, -g_CameraViewVector);
     u_vector.y = 0;
 
-    glm::vec4 w_vector = camera_view_vector;
+    glm::vec4 w_vector = g_CameraViewVector;
     w_vector.y = 0;
 
     float camera_speed = 3.0f;
@@ -463,7 +476,7 @@ int main()
 
     // Computamos a matriz "View" utilizando os parâmetros da câmera para
     // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-    glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
+    glm::mat4 view = Matrix_Camera_View(camera_position_c, g_CameraViewVector, camera_up_vector);
 
     // Agora computamos a matriz de Projeção.
     glm::mat4 projection;
@@ -505,7 +518,7 @@ int main()
     // PAREDE EXTERNA PRINCIPAL
     model = Matrix_Identity();
     glUniform1i(g_object_id_uniform, 50);
-    model = model * Matrix_Translate(g_TorsoPositionX, g_TorsoPositionY - 0.5f , 0.0f);
+    model = model * Matrix_Translate(g_TorsoPositionX, g_TorsoPositionY -0.5f, 0.0f);
     PushMatrix(model);
     model = model * Matrix_Scale(100.0f, -10.0f, 0.5f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -1663,7 +1676,53 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
   {
-    // g_LeftMouseButtonPressed = true;
+    Ray shot_ray;
+    shot_ray.origin = glm::vec3(g_CameraPosition);
+    shot_ray.direction = glm::vec3(g_CameraViewVector);
+
+    Plane wall_front = {glm::vec3(0.0f, 0.0f, 1.0f), -99.75f};    // z = 99.75
+    Plane wall_back  = {glm::vec3(0.0f, 0.0f, -1.0f), 0.25f};     // z = 0.25
+    Plane wall_right = {glm::vec3(1.0f, 0.0f, 0.0f), -49.75f};    // x = 49.75
+    Plane wall_left  = {glm::vec3(-1.0f, 0.0f, 0.0f), -49.75f};   // x = -49.75
+    Plane walls[] = {wall_front, wall_back, wall_right, wall_left};
+
+    float closest_t = -1.0f;
+    int wall_index = -1;
+
+    for (int i = 0; i < 4; ++i) {
+        float t = checkRayPlaneCollision(shot_ray, walls[i]);
+        if (t > 0 && (closest_t < 0 || t < closest_t)) {
+            closest_t = t;
+            wall_index = i;
+        }
+    }
+
+    if (closest_t > 0) {
+        glm::vec3 intersection_point = shot_ray.origin + closest_t * shot_ray.direction;
+        bool hit = false;
+        if (wall_index == 0) { // front
+            if (intersection_point.x >= -50 && intersection_point.x <= 50 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
+                hit = true;
+            }
+        } else if (wall_index == 1) { // back
+            if (intersection_point.x >= -50 && intersection_point.x <= 50 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
+                hit = true;
+            }
+        } else if (wall_index == 2) { // right
+            if (intersection_point.z >= 0 && intersection_point.z <= 100 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
+                hit = true;
+            }
+        } else if (wall_index == 3) { // left
+            if (intersection_point.z >= 0 && intersection_point.z <= 100 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
+                hit = true;
+            }
+        }
+
+        if (hit) {
+            g_ShotHit = true;
+            g_ShotHitTimer = 0.2f;
+        }
+    }
   }
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
   {
@@ -1957,8 +2016,10 @@ void TextRendering_ShowEulerAngles(GLFWwindow* window)
 
   char buffer[80];
   snprintf(buffer, 80, "Euler Angles rotation matrix = Z(%.2f)*Y(%.2f)*X(%.2f)\n", g_AngleZ, g_AngleY, g_AngleX);
-
   TextRendering_PrintString(window, buffer, -1.0f+pad/10, -1.0f+2*pad/10, 1.0f);
+
+  snprintf(buffer, 80, "Shot Hit: %s", g_ShotHit ? "True" : "False");
+  TextRendering_PrintString(window, buffer, -1.0f+pad/10, -1.0f+4*pad/10, 1.0f);
 }
 
 // Escrevemos na tela qual matriz de projeção está sendo utilizada.
