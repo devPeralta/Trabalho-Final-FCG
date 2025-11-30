@@ -374,9 +374,16 @@ int main()
   Plane wall_right = {glm::vec3(1.0f, 0.0f, 0.0f), -49.75f};    // x = 49.75
   Plane wall_left  = {glm::vec3(-1.0f, 0.0f, 0.0f), -49.75f};   // x = -49.75
 
+  float deltaTime = 0.0f;
+  float lastFrame = 0.0f;
+
   // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
   while (!glfwWindowShouldClose(window))
   {
+    float currentFrame = (float)glfwGetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+
     // Aqui executamos as operações de renderização
 
     // Definimos a cor do "fundo" do framebuffer como branco.  Tal cor é
@@ -432,14 +439,15 @@ int main()
     glm::vec4 w_vector = camera_view_vector;
     w_vector.y = 0;
 
+    float camera_speed = 3.0f;
     if(tecla_W_pressionada)
-      camera_position_c += w_vector * 0.05f;
+      camera_position_c += w_vector * camera_speed * deltaTime;
     if(tecla_A_pressionada)
-      camera_position_c -= u_vector * 0.05f;
+      camera_position_c -= u_vector * camera_speed * deltaTime;
     if(tecla_S_pressionada)
-      camera_position_c -= w_vector * 0.05f;
+      camera_position_c -= w_vector * camera_speed * deltaTime;
     if(tecla_D_pressionada)
-      camera_position_c += u_vector * 0.05f;
+      camera_position_c += u_vector * camera_speed * deltaTime;
 
     cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
 
