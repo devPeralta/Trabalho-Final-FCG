@@ -11,6 +11,7 @@ set(SOURCES
   src/tiny_obj_loader.cpp
   src/collisions.cpp
   src/glad.c
+  src/maze.cpp
 )
 
 cmake_minimum_required(VERSION 3.5.0)

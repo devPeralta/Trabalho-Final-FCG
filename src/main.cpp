@@ -44,6 +44,7 @@
 #include "utils.h"
 #include "matrices.h"
 #include "collisions.h"
+#include "maze.h"
 #include <set>
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
@@ -110,7 +111,7 @@ void PopMatrix(glm::mat4& M);
 
 // Declaração de várias funções utilizadas em main().  Essas estão definidas
 // logo após a definição de main() neste arquivo.
-void DrawCube(GLint render_as_black_uniform); // Desenha um cubo
+void DrawCube(GLint render_as_black_uniform, bool draw_axes_and_edges); // Desenha um cubo
 void DrawLine(GLint render_as_black_uniform);
 GLuint BuildLine();
 GLuint BuildPlane();
@@ -208,7 +209,7 @@ bool tecla_D_pressionada = false;
 // usuário através do mouse (veja função CursorPosCallback()). A posição
 // efetiva da câmera é calculada dentro da função main(), dentro do loop de
 // renderização.
-float g_CameraTheta = 0.0f; // Ângulo no plano ZX em relação ao eixo Z
+float g_CameraTheta = 3.141592f; // Ângulo no plano ZX em relação ao eixo Z
 float g_CameraPhi = 0.0f;   // Ângulo em relação ao eixo Y
 float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 
@@ -370,15 +371,17 @@ int main()
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
 
-  glm::vec4 camera_position_c  = glm::vec4(0.0f, 1.7f, 5.0f, 1.0f);
-
   Sphere cameraSphere;
   cameraSphere.radius = 0.5f;
 
-  Plane wall_front = {glm::vec3(0.0f, 0.0f, 1.0f), -99.75f};    // z = 99.75
-  Plane wall_back  = {glm::vec3(0.0f, 0.0f, -1.0f), 0.25f};     // z = 0.25
-  Plane wall_right = {glm::vec3(1.0f, 0.0f, 0.0f), -49.75f};    // x = 49.75
-  Plane wall_left  = {glm::vec3(-1.0f, 0.0f, 0.0f), -49.75f};   // x = -49.75
+  const int maze_width = 10;
+  const int maze_height = 10;
+  const float wall_size = 5.0f;
+  Maze maze(maze_width, maze_height, wall_size);
+  maze.generate();
+  std::vector<Plane> collision_planes = maze.getCollisionPlanes();
+  std::cout << "Número de planos de colisão: " << collision_planes.size() << std::endl;
+  glm::vec4 camera_position_c  = maze.getStartPlayerPosition();
 
   float deltaTime = 0.0f;
   float lastFrame = 0.0f;
@@ -446,32 +449,85 @@ int main()
     g_CameraPosition = camera_position_c;
     g_CameraViewVector = glm::normalize(camera_lookat_l - camera_position_c); // Vetor "view", sentido para onde a câmera está virada
     glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
-    glm::vec4 u_vector = crossproduct(camera_up_vector, -g_CameraViewVector);
-    u_vector.y = 0;
+  glm::vec4 u_vector = crossproduct(camera_up_vector, -g_CameraViewVector);
+  u_vector.y = 0;
 
-    glm::vec4 w_vector = g_CameraViewVector;
-    w_vector.y = 0;
+  glm::vec4 w_vector = g_CameraViewVector;
+  w_vector.y = 0;
 
-    float camera_speed = 3.0f;
-    if(tecla_W_pressionada)
-      camera_position_c += w_vector * camera_speed * deltaTime;
-    if(tecla_A_pressionada)
-      camera_position_c -= u_vector * camera_speed * deltaTime;
-    if(tecla_S_pressionada)
-      camera_position_c -= w_vector * camera_speed * deltaTime;
-    if(tecla_D_pressionada)
-      camera_position_c += u_vector * camera_speed * deltaTime;
+  float camera_speed = 3.0f;
 
-    cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+  // Calcula o movimento desejado
+  glm::vec3 desired_movement = glm::vec3(0.0f);
 
-    Plane walls[] = {wall_front, wall_back, wall_right, wall_left};
-    for (const auto& wall : walls) {
-        float signedDistance = glm::dot(wall.normal, cameraSphere.center) + wall.distance;
-        if (signedDistance > -cameraSphere.radius) {
-            float penetration = signedDistance + cameraSphere.radius;
-            cameraSphere.center -= wall.normal * penetration;
-            camera_position_c = glm::vec4(cameraSphere.center, 1.0f);
-        }
+  if(tecla_W_pressionada)
+      desired_movement += glm::vec3(w_vector.x, w_vector.y, w_vector.z) * camera_speed * deltaTime;
+  if(tecla_A_pressionada)
+      desired_movement -= glm::vec3(u_vector.x, u_vector.y, u_vector.z) * camera_speed * deltaTime;
+  if(tecla_S_pressionada)
+      desired_movement -= glm::vec3(w_vector.x, w_vector.y, w_vector.z) * camera_speed * deltaTime;
+  if(tecla_D_pressionada)
+      desired_movement += glm::vec3(u_vector.x, u_vector.y, u_vector.z) * camera_speed * deltaTime;
+
+  // Tenta aplicar o movimento
+  glm::vec3 next_position = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z) + desired_movement;
+
+  // Cria esfera temporária na próxima posição
+  Sphere next_sphere;
+  next_sphere.center = next_position;
+  next_sphere.radius = 0.4f; // Raio da esfera de colisão
+
+  // Verifica colisões e ajusta movimento
+  glm::vec3 final_movement = desired_movement;
+
+  for (const auto& wall : collision_planes) {
+      Sphere test_sphere;
+      test_sphere.center = next_position;
+      test_sphere.radius = next_sphere.radius;
+      
+      float signedDistance = glm::dot(wall.normal, test_sphere.center) + wall.distance;
+      
+      // Se vai colidir
+      if (std::abs(signedDistance) < test_sphere.radius) {
+          // Remove a componente do movimento na direção da normal
+          float dot = glm::dot(final_movement, wall.normal);
+          if (dot < 0) { // Movendo em direção à parede
+              final_movement -= wall.normal * dot;
+          }
+          
+          // Empurra para fora se já estiver penetrando
+          float penetration = test_sphere.radius - std::abs(signedDistance);
+          if (penetration > 0) {
+              next_position += wall.normal * penetration * (signedDistance < 0 ? 1.0f : -1.0f);
+          }
+      }
+  }
+
+  // Aplica o movimento final
+  camera_position_c = glm::vec4(glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z) + final_movement, 1.0f);
+
+  cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+
+  float max_penetration = 0.0f;
+  glm::vec3 correction_vector = glm::vec3(0.0f);
+
+  for (const auto& wall : collision_planes) {
+      float signedDistance = glm::dot(wall.normal, cameraSphere.center) + wall.distance;
+      
+      // CORREÇÃO: Use valor absoluto e verifique se está realmente colidindo
+      if (std::abs(signedDistance) < cameraSphere.radius) {
+          float penetration = cameraSphere.radius - std::abs(signedDistance);
+          if (penetration > max_penetration) {
+              max_penetration = penetration;
+              // Empurre na direção da normal se estiver do lado negativo
+              correction_vector = wall.normal * penetration * (signedDistance < 0 ? 1.0f : -1.0f);
+          }
+      }
+  }
+
+    if (max_penetration > 0.0f) {
+        cameraSphere.center += correction_vector; // Reverted to +=
+        camera_position_c = glm::vec4(cameraSphere.center, 1.0f);
     }
 
     // Computamos a matriz "View" utilizando os parâmetros da câmera para
@@ -513,43 +569,9 @@ int main()
     glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
     glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-    const float angulo_90_rad = 1.57079632679f;
+    // Draw the maze
+    maze.draw(g_model_uniform, g_object_id_uniform, render_as_black_uniform);
 
-    // PAREDE EXTERNA PRINCIPAL
-    model = Matrix_Identity();
-    glUniform1i(g_object_id_uniform, 50);
-    model = model * Matrix_Translate(g_TorsoPositionX, g_TorsoPositionY -0.5f, 0.0f);
-    PushMatrix(model);
-    model = model * Matrix_Scale(100.0f, -10.0f, 0.5f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform);
-    PopMatrix(model);
-
-    // PAREDE EXTERNA COPIADA
-    PushMatrix(model);
-    model = model * Matrix_Translate(50.0f, 0.0f, 50.0f);
-    model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
-    model = model * Matrix_Scale(100.0f, -10.0f, 0.5f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform);
-    PopMatrix(model);
-
-    // PAREDE EXTERNA COPIADA 2
-    PushMatrix(model);
-    model = model * Matrix_Translate(-50.0f, 0.0f, 50.0f);
-    model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
-    model = model * Matrix_Scale(100.0f, -10.0f, 0.5f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform);
-    PopMatrix(model);
-
-    PushMatrix(model);
-    model = model * Matrix_Translate(0.0f, 0.0f, 100.0f);
-    // model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
-    model = model * Matrix_Scale(100.0f, -10.0f, 0.5f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawCube(render_as_black_uniform);
-    PopMatrix(model);
 
     // PushMatrix(model);
     // model = model * Matrix_Translate(-2.0f, 0.0f, 0.0f);
@@ -1034,66 +1056,37 @@ void DrawVirtualObject(const char* object_name)
 }
 
 // Função que desenha um cubo com arestas em preto, definido dentro da função BuildTriangles().
-void DrawCube(GLint render_as_black_uniform)
+void DrawCube(GLint render_as_black_uniform, bool draw_axes_and_edges)
 {
-  // Informamos para a placa de vídeo (GPU) que a variável booleana
-  // "render_as_black" deve ser colocada como "false". Veja o arquivo
-  // "shader_vertex.glsl".
   glUniform1i(render_as_black_uniform, false);
 
-  // Pedimos para a GPU rasterizar os vértices do cubo apontados pelo
-  // VAO como triângulos, formando as faces do cubo. Esta
-  // renderização irá executar o Vertex Shader definido no arquivo
-  // "shader_vertex.glsl", e o mesmo irá utilizar as matrizes
-  // "model", "view" e "projection" definidas acima e já enviadas
-  // para a placa de vídeo (GPU).
-  //
-  // Veja a definição de g_VirtualScene["cube_faces"] dentro da
-  // função BuildTriangles(), e veja a documentação da função
-  // glDrawElements() em http://docs.gl/gl3/glDrawElements.
   glDrawElements(
-      g_VirtualScene["cube_faces"].rendering_mode, // Veja slides 182-188 do documento Aula_04_Modelagem_Geometrica_3D.pdf
-      g_VirtualScene["cube_faces"].num_indices,    //
+      g_VirtualScene["cube_faces"].rendering_mode,
+      g_VirtualScene["cube_faces"].num_indices,
       GL_UNSIGNED_INT,
       (void*)(g_VirtualScene["cube_faces"].first_index * sizeof(GLuint))
+  );
+
+  // Só desenha eixos e arestas se draw_axes_and_edges for true
+  if (draw_axes_and_edges) {
+      glLineWidth(4.0f);
+
+      glDrawElements(
+          g_VirtualScene["axes"].rendering_mode,
+          g_VirtualScene["axes"].num_indices,
+          GL_UNSIGNED_INT,
+          (void*)(g_VirtualScene["axes"].first_index * sizeof(GLuint))
       );
 
-  // Pedimos para OpenGL desenhar linhas com largura de 4 pixels.
-  glLineWidth(4.0f);
+      glUniform1i(render_as_black_uniform, true);
 
-  // Pedimos para a GPU rasterizar os vértices dos eixos XYZ
-  // apontados pelo VAO como linhas. Veja a definição de
-  // g_VirtualScene["axes"] dentro da função BuildTriangles(), e veja
-  // a documentação da função glDrawElements() em
-  // http://docs.gl/gl3/glDrawElements.
-  //
-  // Importante: estes eixos serão desenhamos com a matriz "model"
-  // definida acima, e portanto sofrerão as mesmas transformações
-  // geométricas que o cubo. Isto é, estes eixos estarão
-  // representando o sistema de coordenadas do modelo (e não o global)!
-  glDrawElements(
-      g_VirtualScene["axes"].rendering_mode,
-      g_VirtualScene["axes"].num_indices,
-      GL_UNSIGNED_INT,
-      (void*)(g_VirtualScene["axes"].first_index * sizeof(GLuint))
+      glDrawElements(
+          g_VirtualScene["cube_edges"].rendering_mode,
+          g_VirtualScene["cube_edges"].num_indices,
+          GL_UNSIGNED_INT,
+          (void*)(g_VirtualScene["cube_edges"].first_index * sizeof(GLuint))
       );
-
-  // Informamos para a placa de vídeo (GPU) que a variável booleana
-  // "render_as_black" deve ser colocada como "true". Veja o arquivo
-  // "shader_vertex.glsl".
-  glUniform1i(render_as_black_uniform, true);
-
-  // Pedimos para a GPU rasterizar os vértices do cubo apontados pelo
-  // VAO como linhas, formando as arestas pretas do cubo. Veja a
-  // definição de g_VirtualScene["cube_edges"] dentro da função
-  // BuildTriangles(), e veja a documentação da função
-  // glDrawElements() em http://docs.gl/gl3/glDrawElements.
-  glDrawElements(
-      g_VirtualScene["cube_edges"].rendering_mode,
-      g_VirtualScene["cube_edges"].num_indices,
-      GL_UNSIGNED_INT,
-      (void*)(g_VirtualScene["cube_edges"].first_index * sizeof(GLuint))
-      );
+  }
 }
 
 void DrawLine(GLint render_as_black_uniform)
@@ -1676,53 +1669,10 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
   {
-    Ray shot_ray;
-    shot_ray.origin = glm::vec3(g_CameraPosition);
-    shot_ray.direction = glm::vec3(g_CameraViewVector);
-
-    Plane wall_front = {glm::vec3(0.0f, 0.0f, 1.0f), -99.75f};    // z = 99.75
-    Plane wall_back  = {glm::vec3(0.0f, 0.0f, -1.0f), 0.25f};     // z = 0.25
-    Plane wall_right = {glm::vec3(1.0f, 0.0f, 0.0f), -49.75f};    // x = 49.75
-    Plane wall_left  = {glm::vec3(-1.0f, 0.0f, 0.0f), -49.75f};   // x = -49.75
-    Plane walls[] = {wall_front, wall_back, wall_right, wall_left};
-
-    float closest_t = -1.0f;
-    int wall_index = -1;
-
-    for (int i = 0; i < 4; ++i) {
-        float t = checkRayPlaneCollision(shot_ray, walls[i]);
-        if (t > 0 && (closest_t < 0 || t < closest_t)) {
-            closest_t = t;
-            wall_index = i;
-        }
-    }
-
-    if (closest_t > 0) {
-        glm::vec3 intersection_point = shot_ray.origin + closest_t * shot_ray.direction;
-        bool hit = false;
-        if (wall_index == 0) { // front
-            if (intersection_point.x >= -50 && intersection_point.x <= 50 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
-                hit = true;
-            }
-        } else if (wall_index == 1) { // back
-            if (intersection_point.x >= -50 && intersection_point.x <= 50 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
-                hit = true;
-            }
-        } else if (wall_index == 2) { // right
-            if (intersection_point.z >= 0 && intersection_point.z <= 100 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
-                hit = true;
-            }
-        } else if (wall_index == 3) { // left
-            if (intersection_point.z >= 0 && intersection_point.z <= 100 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
-                hit = true;
-            }
-        }
-
-        if (hit) {
-            g_ShotHit = true;
-            g_ShotHitTimer = 0.2f;
-        }
-    }
+    // TODO: Implement ray-casting for shooting targets within the maze
+    // For now, we can just set the shot hit flag for visual feedback.
+    g_ShotHit = true;
+    g_ShotHitTimer = 0.2f;
   }
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
   {

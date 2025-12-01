@@ -8,11 +8,13 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "D:/Trabalho-Final-FCG/src/glad.c" "CMakeFiles/main.dir/src/glad.c.obj" "gcc" "CMakeFiles/main.dir/src/glad.c.obj.d"
-  "D:/Trabalho-Final-FCG/src/collisions.cpp" "CMakeFiles/main.dir/src/collisions.cpp.obj" "gcc" "CMakeFiles/main.dir/src/collisions.cpp.obj.d"
-  "D:/Trabalho-Final-FCG/src/main.cpp" "CMakeFiles/main.dir/src/main.cpp.obj" "gcc" "CMakeFiles/main.dir/src/main.cpp.obj.d"
-  "D:/Trabalho-Final-FCG/src/textrendering.cpp" "CMakeFiles/main.dir/src/textrendering.cpp.obj" "gcc" "CMakeFiles/main.dir/src/textrendering.cpp.obj.d"
-  "D:/Trabalho-Final-FCG/src/tiny_obj_loader.cpp" "CMakeFiles/main.dir/src/tiny_obj_loader.cpp.obj" "gcc" "CMakeFiles/main.dir/src/tiny_obj_loader.cpp.obj.d"
+  "/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/src/glad.c" "CMakeFiles/main.dir/src/glad.c.o" "gcc" "CMakeFiles/main.dir/src/glad.c.o.d"
+  "/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/src/collisions.cpp" "CMakeFiles/main.dir/src/collisions.cpp.o" "gcc" "CMakeFiles/main.dir/src/collisions.cpp.o.d"
+  "/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/src/main.cpp" "CMakeFiles/main.dir/src/main.cpp.o" "gcc" "CMakeFiles/main.dir/src/main.cpp.o.d"
+  "/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/src/maze.cpp" "CMakeFiles/main.dir/src/maze.cpp.o" "gcc" "CMakeFiles/main.dir/src/maze.cpp.o.d"
+  "/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/src/textrendering.cpp" "CMakeFiles/main.dir/src/textrendering.cpp.o" "gcc" "CMakeFiles/main.dir/src/textrendering.cpp.o.d"
+  "/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/src/tiny_obj_loader.cpp" "CMakeFiles/main.dir/src/tiny_obj_loader.cpp.o" "gcc" "CMakeFiles/main.dir/src/tiny_obj_loader.cpp.o.d"
+  "" "/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/bin/Linux/main" "gcc" "CMakeFiles/main.dir/link.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

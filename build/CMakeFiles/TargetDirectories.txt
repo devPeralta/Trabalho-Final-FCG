@@ -1,3 +1,4 @@
-D:/Trabalho-Final-FCG/build/CMakeFiles/main.dir
-D:/Trabalho-Final-FCG/build/CMakeFiles/edit_cache.dir
-D:/Trabalho-Final-FCG/build/CMakeFiles/rebuild_cache.dir
+/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/build/CMakeFiles/main.dir
+/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/build/CMakeFiles/run.dir
+/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/build/CMakeFiles/edit_cache.dir
+/home/pabloperalta/Faculdade/FCG/TrabFinal/Trabalho-Final-FCG/build/CMakeFiles/rebuild_cache.dir
