@@ -226,6 +226,9 @@ bool g_UsePerspectiveProjection = true;
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
+glm::vec3 g_TargetPosition = glm::vec3(5.0f, -0.6f, 20.0f);
+bool g_TargetShow = true;
+
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
 GLuint g_NumLoadedTextures = 0; // Adicionada para contar texturas carregadas
@@ -342,10 +345,6 @@ int main()
   ObjModel uspmodel("../../data/USP.obj");
   ComputeNormals(&uspmodel);
   BuildTrianglesAndAddToVirtualScene(&uspmodel);
-
-  ObjModel cowmodel("../../data/cow.obj");
-  ComputeNormals(&cowmodel);
-  BuildTrianglesAndAddToVirtualScene(&cowmodel);
 
   ObjModel targetmodel("../../data/target.obj");
   ComputeNormals(&targetmodel);
@@ -566,13 +565,15 @@ int main()
     // Neste ponto a matriz model recuperada é a matriz inicial (translação do torso)
 
     // Desenha o alvo
-    model = Matrix_Identity();
-    model = model * Matrix_Translate(5.0f, -0.6f, 20.0f);
-    model = model * Matrix_Rotate_X(-1.57079632679f); // Rotaciona para ficar em pé
-    model = model * Matrix_Scale(0.015f, 0.015f, 0.015f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform1i(g_object_id_uniform, 6); // ID do alvo
-    DrawVirtualObject("10480_archery_target");
+    if (g_TargetShow) {
+        model = Matrix_Identity();
+        model = model * Matrix_Translate(g_TargetPosition.x, g_TargetPosition.y, g_TargetPosition.z);
+        model = model * Matrix_Rotate_X(-1.57079632679f); // Rotaciona para ficar em pé
+        model = model * Matrix_Scale(0.015f, 0.015f, 0.015f);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, 6); // ID do alvo
+        DrawVirtualObject("10480_archery_target");
+    }
 
     // Agora queremos desenhar os eixos XYZ de coordenadas GLOBAIS.
     // Para tanto, colocamos a matriz de modelagem igual à identidade.
@@ -1676,52 +1677,30 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
   {
-    Ray shot_ray;
-    shot_ray.origin = glm::vec3(g_CameraPosition);
-    shot_ray.direction = glm::vec3(g_CameraViewVector);
+    glm::mat4 model = Matrix_Identity();
+    model = model * Matrix_Translate(g_TargetPosition.x, g_TargetPosition.y, g_TargetPosition.z);
+    model = model * Matrix_Rotate_X(-1.57079632679f); // Rotaciona para ficar em pé
+    model = model * Matrix_Scale(0.015f, 0.015f, 0.015f);
 
-    Plane wall_front = {glm::vec3(0.0f, 0.0f, 1.0f), -99.75f};    // z = 99.75
-    Plane wall_back  = {glm::vec3(0.0f, 0.0f, -1.0f), 0.25f};     // z = 0.25
-    Plane wall_right = {glm::vec3(1.0f, 0.0f, 0.0f), -49.75f};    // x = 49.75
-    Plane wall_left  = {glm::vec3(-1.0f, 0.0f, 0.0f), -49.75f};   // x = -49.75
-    Plane walls[] = {wall_front, wall_back, wall_right, wall_left};
+    glm::mat4 invModel = glm::inverse(model);
+    Ray local_ray;
+    local_ray.origin = glm::vec3(invModel * glm::vec4(g_CameraPosition.x, g_CameraPosition.y, g_CameraPosition.z, 1.0f));
+    local_ray.direction = glm::vec3(invModel * glm::vec4(g_CameraViewVector.x, g_CameraViewVector.y, g_CameraViewVector.z, 0.0f));
 
-    float closest_t = -1.0f;
-    int wall_index = -1;
+    SceneObject target = g_VirtualScene["10480_archery_target"];
+    AABB target_bbox;
+    target_bbox.min = target.bbox_min;
+    target_bbox.max = target.bbox_max;
 
-    for (int i = 0; i < 4; ++i) {
-        float t = checkRayPlaneCollision(shot_ray, walls[i]);
-        if (t > 0 && (closest_t < 0 || t < closest_t)) {
-            closest_t = t;
-            wall_index = i;
-        }
-    }
+    if (checkRayAABBCollision(local_ray, target_bbox))
+    {
+        g_TargetShow = false;
 
-    if (closest_t > 0) {
-        glm::vec3 intersection_point = shot_ray.origin + closest_t * shot_ray.direction;
-        bool hit = false;
-        if (wall_index == 0) { // front
-            if (intersection_point.x >= -50 && intersection_point.x <= 50 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
-                hit = true;
-            }
-        } else if (wall_index == 1) { // back
-            if (intersection_point.x >= -50 && intersection_point.x <= 50 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
-                hit = true;
-            }
-        } else if (wall_index == 2) { // right
-            if (intersection_point.z >= 0 && intersection_point.z <= 100 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
-                hit = true;
-            }
-        } else if (wall_index == 3) { // left
-            if (intersection_point.z >= 0 && intersection_point.z <= 100 && intersection_point.y >= g_TorsoPositionY && intersection_point.y <= g_TorsoPositionY + 10.0f) {
-                hit = true;
-            }
-        }
+        float x = (rand() % 99) - 49.5f;
+        float z = (rand() % 99) + 0.5f;
+        g_TargetPosition = glm::vec3(x, -0.6f, z);
 
-        if (hit) {
-            g_ShotHit = true;
-            g_ShotHitTimer = 0.2f;
-        }
+        g_TargetShow = true;
     }
   }
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)

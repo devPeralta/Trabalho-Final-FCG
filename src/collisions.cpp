@@ -15,3 +15,17 @@ float checkRayPlaneCollision(const Ray& ray, const Plane& plane) {
     }
     return -1.0f; // Sem colisão
 }
+
+bool checkRayAABBCollision(const Ray& ray, const AABB& box) {
+    glm::vec3 invDir = 1.0f / ray.direction;
+    glm::vec3 tMin = (box.min - ray.origin) * invDir;
+    glm::vec3 tMax = (box.max - ray.origin) * invDir;
+
+    glm::vec3 t1 = glm::min(tMin, tMax);
+    glm::vec3 t2 = glm::max(tMin, tMax);
+
+    float tNear = glm::max(glm::max(t1.x, t1.y), t1.z);
+    float tFar = glm::min(glm::min(t2.x, t2.y), t2.z);
+
+    return tNear <= tFar && tFar >= 0.0f;
+}
