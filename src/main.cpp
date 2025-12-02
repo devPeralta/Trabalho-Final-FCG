@@ -228,6 +228,11 @@ bool g_ShowInfoText = true;
 
 glm::vec3 g_TargetPosition = glm::vec3(5.0f, -0.6f, 20.0f);
 bool g_TargetShow = true;
+float g_TargetAngle = 0.0f;
+float g_TargetScale = 2.2f;
+glm::vec3 g_TargetDirection = glm::vec3(0.0f, 0.0f, 1.0f);
+float g_TargetSpeed = 2.0f;
+float g_TimeSinceLastDirectionChange = 0.0f;
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
@@ -388,6 +393,24 @@ int main()
     float currentFrame = (float)glfwGetTime();
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
+
+    g_TargetAngle += 0.5f * deltaTime;
+    g_TimeSinceLastDirectionChange += deltaTime;
+
+    if (g_TimeSinceLastDirectionChange > 5.0f) {
+        float angle = (rand() / (float)RAND_MAX) * 2.0f * 3.141592f;
+        g_TargetDirection = glm::vec3(cos(angle), 0.0f, sin(angle));
+        g_TimeSinceLastDirectionChange = 0.0f;
+    }
+
+    g_TargetPosition += g_TargetDirection * g_TargetSpeed * deltaTime;
+
+    if (g_TargetPosition.x > 49.5f || g_TargetPosition.x < -49.5f) {
+        g_TargetDirection.x *= -1;
+    }
+    if (g_TargetPosition.z > 99.5f || g_TargetPosition.z < 0.5f) {
+        g_TargetDirection.z *= -1;
+    }
 
     if (g_ShotHitTimer > 0.0f) {
         g_ShotHitTimer -= deltaTime;
@@ -568,8 +591,9 @@ int main()
     if (g_TargetShow) {
         model = Matrix_Identity();
         model = model * Matrix_Translate(g_TargetPosition.x, g_TargetPosition.y, g_TargetPosition.z);
+        model = model * Matrix_Rotate_Y(g_TargetAngle);
         model = model * Matrix_Rotate_X(-1.57079632679f); // Rotaciona para ficar em pé
-        model = model * Matrix_Scale(0.015f, 0.015f, 0.015f);
+        model = model * Matrix_Scale(0.015f * g_TargetScale, 0.015f * g_TargetScale, 0.015f * g_TargetScale);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, 6); // ID do alvo
         DrawVirtualObject("10480_archery_target");
@@ -1677,11 +1701,14 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
   {
+    // Get the model matrix for the target
     glm::mat4 model = Matrix_Identity();
     model = model * Matrix_Translate(g_TargetPosition.x, g_TargetPosition.y, g_TargetPosition.z);
+    model = model * Matrix_Rotate_Y(g_TargetAngle);
     model = model * Matrix_Rotate_X(-1.57079632679f); // Rotaciona para ficar em pé
-    model = model * Matrix_Scale(0.015f, 0.015f, 0.015f);
+    model = model * Matrix_Scale(0.015f * g_TargetScale, 0.015f * g_TargetScale, 0.015f * g_TargetScale);
 
+    // Transform the ray into the object's local space
     glm::mat4 invModel = glm::inverse(model);
     Ray local_ray;
     local_ray.origin = glm::vec3(invModel * glm::vec4(g_CameraPosition.x, g_CameraPosition.y, g_CameraPosition.z, 1.0f));
