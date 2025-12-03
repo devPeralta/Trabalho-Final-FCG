@@ -3,6 +3,195 @@
 
 CMakeFiles/main.dir/src/collisions.cpp.obj
  D:/Trabalho-Final-FCG/src/collisions.cpp
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include-fixed/limits.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include-fixed/syslimits.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/cpp_type_traits.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/std_abs.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cassert
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cfloat
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/climits
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cmath
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cstddef
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cstdint
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cstdio
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cstdlib
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ext/type_traits.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/limits
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/stdlib.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/type_traits
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++config.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/cpu_defines.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/os_defines.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/float.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/stddef.h
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/stdint.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/_mingw.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/_mingw_mac.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/_mingw_off_t.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/_mingw_print_pop.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/_mingw_print_push.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/_mingw_secapi.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/assert.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/crtdefs.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/float.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/limits.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/malloc.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/math.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/sdks/_mingw_directx.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/sec_api/stdio_s.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/sec_api/stdlib_s.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/stddef.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/stdint.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/stdio.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/stdlib.h
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/swprintf.inl
+ C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/vadefs.h
+ D:/Trabalho-Final-FCG/include/collisions.h
+ D:/Trabalho-Final-FCG/include/glm/common.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/_fixes.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/_vectorize.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/compute_common.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/compute_vector_relational.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/func_common.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/func_exponential.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/func_geometric.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/func_integer.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/func_matrix.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/func_packing.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/func_trigonometric.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/func_vector_relational.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/qualifier.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/setup.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_half.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_half.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat2x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat2x2.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat2x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat2x3.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat2x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat2x4.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat3x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat3x2.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat3x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat3x3.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat3x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat3x4.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat4x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat4x2.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat4x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat4x3.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat4x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_mat4x4.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_vec1.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_vec1.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_vec2.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_vec2.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_vec3.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_vec3.inl
+ D:/Trabalho-Final-FCG/include/glm/detail/type_vec4.hpp
+ D:/Trabalho-Final-FCG/include/glm/detail/type_vec4.inl
+ D:/Trabalho-Final-FCG/include/glm/exponential.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_clip_space.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_clip_space.inl
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double2x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double2x2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double2x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double2x3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double2x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double2x4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double3x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double3x2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double3x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double3x3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double3x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double3x4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double4x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double4x2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double4x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double4x3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double4x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_double4x4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float2x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float2x2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float2x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float2x3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float2x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float2x4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float3x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float3x2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float3x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float3x3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float3x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float3x4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float4x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float4x2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float4x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float4x3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float4x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_float4x4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_projection.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_projection.inl
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_transform.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/matrix_transform.inl
+ D:/Trabalho-Final-FCG/include/glm/ext/scalar_constants.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/scalar_constants.inl
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_bool2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_bool2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_bool3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_bool3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_bool4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_bool4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_double2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_double2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_double3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_double3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_double4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_double4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_float2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_float2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_float3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_float3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_float4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_float4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_int2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_int2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_int3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_int3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_int4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_int4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_uint2.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_uint2_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_uint3.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_uint3_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_uint4.hpp
+ D:/Trabalho-Final-FCG/include/glm/ext/vector_uint4_precision.hpp
+ D:/Trabalho-Final-FCG/include/glm/fwd.hpp
+ D:/Trabalho-Final-FCG/include/glm/geometric.hpp
+ D:/Trabalho-Final-FCG/include/glm/glm.hpp
+ D:/Trabalho-Final-FCG/include/glm/gtc/constants.hpp
+ D:/Trabalho-Final-FCG/include/glm/gtc/constants.inl
+ D:/Trabalho-Final-FCG/include/glm/gtc/matrix_transform.hpp
+ D:/Trabalho-Final-FCG/include/glm/gtc/matrix_transform.inl
+ D:/Trabalho-Final-FCG/include/glm/integer.hpp
+ D:/Trabalho-Final-FCG/include/glm/mat2x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/mat2x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/mat2x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/mat3x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/mat3x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/mat3x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/mat4x2.hpp
+ D:/Trabalho-Final-FCG/include/glm/mat4x3.hpp
+ D:/Trabalho-Final-FCG/include/glm/mat4x4.hpp
+ D:/Trabalho-Final-FCG/include/glm/matrix.hpp
+ D:/Trabalho-Final-FCG/include/glm/packing.hpp
+ D:/Trabalho-Final-FCG/include/glm/simd/platform.h
+ D:/Trabalho-Final-FCG/include/glm/trigonometric.hpp
+ D:/Trabalho-Final-FCG/include/glm/vec2.hpp
+ D:/Trabalho-Final-FCG/include/glm/vec3.hpp
+ D:/Trabalho-Final-FCG/include/glm/vec4.hpp
+ D:/Trabalho-Final-FCG/include/glm/vector_relational.hpp
+ D:/Trabalho-Final-FCG/include/matrices.h
 
 CMakeFiles/main.dir/src/glad.c.obj
  D:/Trabalho-Final-FCG/src/glad.c
@@ -312,9 +501,11 @@ CMakeFiles/main.dir/src/main.cpp.obj
  C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/initializer_list
  C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ios
  C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/iosfwd
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/iostream
  C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/istream
  C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/limits
  C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/map
+ C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/math.h
  C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/new
  C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ostream
  C:/Program Files/CodeBlocks/MinGW/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/set
@@ -506,6 +697,7 @@ CMakeFiles/main.dir/src/main.cpp.obj
  C:/Program Files/CodeBlocks/MinGW/x86_64-w64-mingw32/include/wow64apiset.h
  D:/Trabalho-Final-FCG/include/GLFW/glfw3.h
  D:/Trabalho-Final-FCG/include/KHR/khrplatform.h
+ D:/Trabalho-Final-FCG/include/collisions.h
  D:/Trabalho-Final-FCG/include/glad/glad.h
  D:/Trabalho-Final-FCG/include/glm/common.hpp
  D:/Trabalho-Final-FCG/include/glm/detail/_fixes.hpp
@@ -679,6 +871,7 @@ CMakeFiles/main.dir/src/main.cpp.obj
  D:/Trabalho-Final-FCG/include/glm/vec4.hpp
  D:/Trabalho-Final-FCG/include/glm/vector_relational.hpp
  D:/Trabalho-Final-FCG/include/matrices.h
+ D:/Trabalho-Final-FCG/include/stb_image.h
  D:/Trabalho-Final-FCG/include/tiny_obj_loader.h
  D:/Trabalho-Final-FCG/include/utils.h
 

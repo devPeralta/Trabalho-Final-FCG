@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <algorithm>
 
+#include <glm/gtc/constants.hpp>
+
 // Adicionamos a implementação da biblioteca de leitura de imagens
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -124,7 +126,6 @@ GLuint LoadShader_Vertex(const char* filename);   // Carrega um vertex shader
 GLuint LoadShader_Fragment(const char* filename); // Carrega um fragment shader
 void LoadShader(const char* filename, GLuint shader_id); // Função utilizada pelas duas acima
 GLuint CreateGpuProgram(GLuint vertex_shader_id, GLuint fragment_shader_id); // Cria um programa de GPU
-
 // Declaração de funções auxiliares para renderizar texto dentro da janela
 // OpenGL. Estas funções estão definidas no arquivo "textrendering.cpp".
 void TextRendering_Init();
@@ -226,6 +227,16 @@ bool g_UsePerspectiveProjection = true;
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
+//variável que controla o tipo de câmera: livre ou look-at
+bool g_UseLookAtCamera = false; // false = Câmera Livre (padrão), true = Câmera Look-At
+
+// Posição inicial do jogador
+glm::vec4 g_PosicaoJogador = glm::vec4(0.0f, 1.7f, 5.0f, 1.0f);
+
+GLuint g_player_model_id = -1; // armazenar o ID do modelo do jogador
+
+const char* g_player_model_name = "jogador_personagem";
+
 glm::vec3 g_TargetPosition = glm::vec3(5.0f, -0.6f, 20.0f);
 bool g_TargetShow = true;
 float g_TargetAngle = 0.0f;
@@ -271,7 +282,7 @@ int main()
   // Criamos uma janela do sistema operacional, com 800 colunas e 800 linhas
   // de pixels, e com título "INF01047 ...".
   GLFWwindow* window;
-  window = glfwCreateWindow(800, 800, "INF01047 - 287723 - Pablo Diedrich Peralta", NULL, NULL);
+  window = glfwCreateWindow(800, 800, "INF01047 - 287723 - 213957 - Pablo Diedrich Peralta , Taylor Souza Frutuoso da Costa", NULL, NULL);
   if (!window)
   {
     glfwTerminate();
@@ -354,6 +365,17 @@ int main()
   ObjModel targetmodel("../../data/target.obj");
   ComputeNormals(&targetmodel);
   BuildTrianglesAndAddToVirtualScene(&targetmodel);
+
+  //ObjModel jogadormodel("../../data/jogador.obj");
+  //ComputeNormals(&jogadormodel);
+  //BuildTrianglesAndAddToVirtualScene(&jogadormodel);
+
+  // Carregamento do modelo do jogador
+  //g_player_model_id = load_object_into_gpu("data/jogador.obj");
+  ObjModel playerModel("../../data/jogador.obj"); 
+  ComputeNormals(&playerModel);
+  BuildTrianglesAndAddToVirtualScene(&playerModel);
+
 
   // Inicializamos o código para renderização de texto.
   TextRendering_Init();
@@ -459,7 +481,7 @@ int main()
     // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
     // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
     // e ScrollCallback().
-    float y = sin(g_CameraPhi);
+  /*  float y = sin(g_CameraPhi);
     float z = cos(g_CameraPhi)*cos(g_CameraTheta);
     float x = cos(g_CameraPhi)*sin(g_CameraTheta);
 
@@ -484,21 +506,123 @@ int main()
     if(tecla_D_pressionada)
       camera_position_c += u_vector * camera_speed * deltaTime;
 
-    cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+    cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);*/
+  // -------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------
+// LÓGICA DE MOVIMENTAÇÃO E CÂMERA HÍBRIDA (FPS / TPS)
+// -------------------------------------------------------------------------------
 
-    Plane walls[] = {wall_front, wall_back, wall_right, wall_left};
-    for (const auto& wall : walls) {
-        float signedDistance = glm::dot(wall.normal, cameraSphere.center) + wall.distance;
-        if (signedDistance > -cameraSphere.radius) {
-            float penetration = signedDistance + cameraSphere.radius;
-            cameraSphere.center -= wall.normal * penetration;
-            camera_position_c = glm::vec4(cameraSphere.center, 1.0f);
-        }
-    }
+// 1. Calculamos a direção para onde o jogador está "olhando" (Forward Vector)
+//    Isso é baseado nos ângulos Theta e Phi controlados pelo mouse.
+//    *** DECLARAÇÃO DE VARIÁVEIS LOCAIS RESOLVENDO ERROS DE ESCOPO ***
+float r = 1.0f;
+float y_dir = r * sin(g_CameraPhi);
+float z_dir = r * cos(g_CameraPhi) * cos(g_CameraTheta);
+float x_dir = r * cos(g_CameraPhi) * sin(g_CameraTheta);
+
+// Vetor que aponta para frente (na direção do olhar). W=0.0f para ser vetor.
+glm::vec4 forward_vector = glm::vec4(-x_dir, -y_dir, -z_dir, 0.0f);
+
+// -------------------------------------------------------------------------
+// *** SOLUÇÃO MATEMÁTICA SEGURA (ELIMINA O ERRO DE PRODUTO ESCALAR/NORM) ***
+// -------------------------------------------------------------------------
+
+// Substituição da função norm() falha por cálculo manual (Forward Vector)
+float forward_len_sq = forward_vector.x*forward_vector.x + forward_vector.y*forward_vector.y + forward_vector.z*forward_vector.z;
+if (forward_len_sq != 0.0f) {
+    float forward_len = sqrt(forward_len_sq);
+    forward_vector = forward_vector / forward_len; // Normaliza para garantir tamanho 1
+}
+
+// PASSO 2.1: CÁLCULO DO RIGHT_VECTOR (Strafe) - Ortogonalidade XZ.
+// Usa z_dir e x_dir definidos acima.
+glm::vec4 right_vector = glm::vec4(z_dir, 0.0f, -x_dir, 0.0f);
+
+// PASSO 2.2: CÁLCULO DO WALK_VECTOR (Frente no chão)
+// Projeta o forward_vector no chão (Y=0.0f).
+glm::vec4 walk_vector = glm::vec4(forward_vector.x, 0.0f, forward_vector.z, 0.0f);
+
+// 3. Normalização dos Vetores de Movimento (Substituição da norm() falha)
+float right_len_sq = right_vector.x*right_vector.x + right_vector.z*right_vector.z;
+if (right_len_sq != 0.0f) {
+    float right_len = sqrt(right_len_sq);
+    right_vector = right_vector / right_len;
+}
+
+float walk_len_sq = walk_vector.x*walk_vector.x + walk_vector.z*walk_vector.z;
+if (walk_len_sq != 0.0f) {
+    float walk_len = sqrt(walk_len_sq);
+    walk_vector = walk_vector / walk_len;
+}
+
+// 4. Aplicamos a movimentação WASD na POSIÇÃO DO JOGADOR (g_PosicaoJogador)
+float camera_speed = 3.0f;
+if(tecla_W_pressionada) g_PosicaoJogador += walk_vector * camera_speed * deltaTime;
+if(tecla_S_pressionada) g_PosicaoJogador -= walk_vector * camera_speed * deltaTime;
+if(tecla_A_pressionada) g_PosicaoJogador -= right_vector * camera_speed * deltaTime;
+if(tecla_D_pressionada) g_PosicaoJogador += right_vector * camera_speed * deltaTime;
+
+// -------------------------------------------------------------------------
+// 5. Definimos a posição final da CÂMERA baseada no modo escolhido
+// -------------------------------------------------------------------------
+if (!g_UseLookAtCamera)
+{
+    // --- MODO 1ª PESSOA (FPS) ---
+    // camera_position_c é uma variável que deve ser acessível e modificável aqui.
+    camera_position_c = g_PosicaoJogador;
+}
+else
+{
+    // --- MODO 3ª PESSOA (TPS) ---
+    float camera_offset_distance = 5.0f; // Distância atrás do jogador
+    float camera_offset_height = 2.0f;   // Altura acima do jogador
+
+    // Calcula a posição da câmera: Posição do Jogador - (Frente * Distância) + Altura
+    camera_position_c = g_PosicaoJogador
+                        - forward_vector * camera_offset_distance
+                        + glm::vec4(0.0f, camera_offset_height, 0.0f, 0.0f);
+}
+
+// ESTE CÓDIGO DEVE VIR SEMPRE DEPOIS DO IF/ELSE, INDEPENDENTE DO MODO:
+// *** DECLARAÇÃO DE VARIÁVEL LOCAL RESOLVENDO O ERRO DE ESCOPO NA LINHA 586 ***
+glm::vec4 camera_up_vector = glm::vec4(0.0f,1.0f,0.0f,0.0f); 
+g_CameraViewVector = forward_vector; // Onde a câmera aponta
+g_CameraPosition = camera_position_c; // Posição final da câmera
+
+// Calcula e envia a matriz View (Crucial para a renderização)
+glm::mat4 view = Matrix_Camera_View(camera_position_c, g_CameraViewVector, camera_up_vector);
+glUniformMatrix4fv(g_view_uniform, 1, GL_FALSE, glm::value_ptr(view));
+
+
+// -------------------------------------------------------------------------
+// RENDERIZAÇÃO DO PERSONAGEM JOGADOR (apenas em 3ª pessoa)
+// -------------------------------------------------------------------------
+
+if (g_UseLookAtCamera) 
+{
+    // CUIDADO: SEMPRE comece com a matriz identidade para o modelo
+    glm::mat4 model = Matrix_Identity();
+    
+    // 1. POSIÇÃO: Translada para a posição do jogador
+    model = model * Matrix_Translate(g_PosicaoJogador.x, g_PosicaoJogador.y - 1.0f, g_PosicaoJogador.z);
+    
+    // 2. ROTAÇÃO: Faz o personagem girar com a câmera
+    model = model * Matrix_Rotate_Y(g_CameraTheta - glm::pi<float>()/2.0f);
+    
+    // 3. ESCALA 
+    model = model * Matrix_Scale(0.3f, 0.3f, 0.3f); 
+    
+    // Envia a matriz Model
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, 3); 
+    
+    // CHAMA A FUNÇÃO DE DESENHO
+    DrawVirtualObject("Cube001"); // Nome do objeto do jogador
+}
 
     // Computamos a matriz "View" utilizando os parâmetros da câmera para
     // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-    glm::mat4 view = Matrix_Camera_View(camera_position_c, g_CameraViewVector, camera_up_vector);
+   // glm::mat4 view = Matrix_Camera_View(camera_position_c, g_CameraViewVector, camera_up_vector);
 
     // Agora computamos a matriz de Projeção.
     glm::mat4 projection;
@@ -1884,6 +2008,14 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
   if (key == GLFW_KEY_H && action == GLFW_PRESS)
   {
     g_ShowInfoText = !g_ShowInfoText;
+  }
+  // Se o usuário apertar a tecla V, alternamos entre câmera LookAt e câmera Livre
+  if (key == GLFW_KEY_V && action == GLFW_PRESS)
+  {
+    g_UseLookAtCamera = !g_UseLookAtCamera;
+    
+    // Opcional: Resetar a distância ao trocar para LookAt para evitar zoom estranho
+    if(g_UseLookAtCamera) g_CameraDistance = 3.5f; 
   }
 
   // Se o usuário apertar a tecla C, alternamos a captura do mouse
