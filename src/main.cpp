@@ -5,8 +5,6 @@
 //    INF01047 Fundamentos de Computação Gráfica
 //               Prof. Eduardo Gastal
 //
-//                   LABORATÓRIO 3
-//
 
 #include <iostream>
 #include <cmath>
@@ -23,6 +21,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <algorithm>
+#include <ctime>
 
 // Adicionamos a implementação da biblioteca de leitura de imagens
 #define STB_IMAGE_IMPLEMENTATION
@@ -45,6 +44,22 @@
 #include "matrices.h"
 #include "collisions.h"
 #include <set>
+
+// Function to calculate a point on a cubic Bezier curve
+glm::vec3 CalculateBezierPoint(float t, const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3) {
+    float u = 1.0f - t;
+    float tt = t * t;
+    float uu = u * u;
+    float uuu = uu * u;
+    float ttt = tt * t;
+
+    glm::vec3 p = uuu * p0; // (1-t)^3 * P0
+    p += 3.0f * uu * t * p1; // 3 * (1-t)^2 * t * P1
+    p += 3.0f * u * tt * p2; // 3 * (1-t) * t^2 * P2
+    p += ttt * p3; // t^3 * P3
+
+    return p;
+}
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -136,6 +151,7 @@ void TextRendering_PrintVector(GLFWwindow* window, glm::vec4 v, float x, float y
 void TextRendering_PrintMatrixVectorProduct(GLFWwindow* window, glm::mat4 M, glm::vec4 v, float x, float y, float scale = 1.0f);
 void TextRendering_PrintMatrixVectorProductMoreDigits(GLFWwindow* window, glm::mat4 M, glm::vec4 v, float x, float y, float scale = 1.0f);
 void TextRendering_PrintMatrixVectorProductDivW(GLFWwindow* window, glm::mat4 M, glm::vec4 v, float x, float y, float scale = 1.0f);
+void GenerateNewBezierPath(bool teleport);
 
 // Funções abaixo renderizam como texto na janela OpenGL algumas matrizes e
 // outras informações do programa. Definidas após main().
@@ -230,9 +246,11 @@ glm::vec3 g_TargetPosition = glm::vec3(5.0f, -0.6f, 20.0f);
 bool g_TargetShow = true;
 float g_TargetAngle = 0.0f;
 float g_TargetScale = 2.2f;
-glm::vec3 g_TargetDirection = glm::vec3(0.0f, 0.0f, 1.0f);
-float g_TargetSpeed = 2.0f;
-float g_TimeSinceLastDirectionChange = 0.0f;
+
+std::vector<glm::vec3> g_ControlPoints;
+int g_CurrentSegment = 0;
+float g_BezierT = 0.0f;
+float g_BezierSpeed = 0.2f;
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
@@ -244,6 +262,7 @@ GLint g_object_id_uniform; // [COPIADO DO main.cpp, LINHA 273]
 
 int main()
 {
+  srand(time(NULL));
   // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
   // sistema operacional, onde poderemos renderizar com OpenGL.
   int success = glfwInit();
@@ -355,8 +374,7 @@ int main()
   ComputeNormals(&targetmodel);
   BuildTrianglesAndAddToVirtualScene(&targetmodel);
 
-  // Inicializamos o código para renderização de texto.
-  TextRendering_Init();
+  GenerateNewBezierPath(true);
 
   // Buscamos o endereço das variáveis definidas dentro do Vertex Shader.
   // Utilizaremos estas variáveis para enviar dados para a placa de vídeo
@@ -395,22 +413,20 @@ int main()
     lastFrame = currentFrame;
 
     g_TargetAngle += 0.5f * deltaTime;
-    g_TimeSinceLastDirectionChange += deltaTime;
 
-    if (g_TimeSinceLastDirectionChange > 5.0f) {
-        float angle = (rand() / (float)RAND_MAX) * 2.0f * 3.141592f;
-        g_TargetDirection = glm::vec3(cos(angle), 0.0f, sin(angle));
-        g_TimeSinceLastDirectionChange = 0.0f;
+    g_BezierT += g_BezierSpeed * deltaTime;
+
+    if (g_BezierT >= 1.0f)
+    {
+        GenerateNewBezierPath(false);
     }
 
-    g_TargetPosition += g_TargetDirection * g_TargetSpeed * deltaTime;
+    glm::vec3 p0 = g_ControlPoints[0];
+    glm::vec3 p1 = g_ControlPoints[1];
+    glm::vec3 p2 = g_ControlPoints[2];
+    glm::vec3 p3 = g_ControlPoints[3];
 
-    if (g_TargetPosition.x > 49.5f || g_TargetPosition.x < -49.5f) {
-        g_TargetDirection.x *= -1;
-    }
-    if (g_TargetPosition.z > 99.5f || g_TargetPosition.z < 0.5f) {
-        g_TargetDirection.z *= -1;
-    }
+    g_TargetPosition = CalculateBezierPoint(g_BezierT, p0, p1, p2, p3);
 
     if (g_ShotHitTimer > 0.0f) {
         g_ShotHitTimer -= deltaTime;
@@ -706,6 +722,36 @@ int main()
 
   // Fim do programa
   return 0;
+}
+
+void GenerateNewBezierPath(bool teleport)
+{
+    float min_x = -49.0f, max_x = 49.0f;
+    float min_z = 1.0f, max_z = 99.0f;
+    float fixed_y = -0.6f;
+    auto rand_float = [](float min, float max) {
+        float scale = rand() / (float) RAND_MAX;
+        return min + scale * ( max - min );
+    };
+
+    glm::vec3 p0;
+    if (teleport || g_ControlPoints.empty())
+    {
+        p0 = { rand_float(min_x, max_x), fixed_y, rand_float(min_z, max_z) };
+    }
+    else
+    {
+        p0 = g_ControlPoints.back();
+    }
+
+    g_ControlPoints.clear();
+
+    g_ControlPoints.push_back(p0);
+    g_ControlPoints.push_back({ rand_float(min_x, max_x), fixed_y, rand_float(min_z, max_z) });
+    g_ControlPoints.push_back({ rand_float(min_x, max_x), fixed_y, rand_float(min_z, max_z) });
+    g_ControlPoints.push_back({ rand_float(min_x, max_x), fixed_y, rand_float(min_z, max_z) });
+
+    g_BezierT = 0.0f;
 }
 
 // Função que pega a matriz M e guarda a mesma no topo da pilha
@@ -1721,13 +1767,8 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
     if (checkRayAABBCollision(local_ray, target_bbox))
     {
-        g_TargetShow = false;
-
-        float x = (rand() % 99) - 49.5f;
-        float z = (rand() % 99) + 0.5f;
-        g_TargetPosition = glm::vec3(x, -0.6f, z);
-
-        g_TargetShow = true;
+        GenerateNewBezierPath(true);
+        g_TargetPosition = g_ControlPoints[0];
     }
   }
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
