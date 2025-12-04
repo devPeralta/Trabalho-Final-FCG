@@ -45,6 +45,8 @@
 #include "collisions.h"
 #include <set>
 
+bool g_UseLookAtCamera = false;
+
 // Function to calculate a point on a cubic Bezier curve
 glm::vec3 CalculateBezierPoint(float t, const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3) {
     float u = 1.0f - t;
@@ -471,50 +473,68 @@ int main()
     // comentários detalhados dentro da definição de BuildTriangles().
     glBindVertexArray(vertex_array_object_id);
 
-    // Computamos a posição da câmera utilizando coordenadas esféricas.  As
-    // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
-    // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
-    // e ScrollCallback().
-    float y = sin(g_CameraPhi);
-    float z = cos(g_CameraPhi)*cos(g_CameraTheta);
-    float x = cos(g_CameraPhi)*sin(g_CameraTheta);
+    // "Desligamos" o VAO, evitando assim que operações posteriores venham a
+    // alterar o mesmo. Isso evita bugs.
+    glBindVertexArray(0);
 
-    // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
-    glm::vec4 camera_lookat_l = camera_position_c - glm::vec4(x,y,z,0.0f);
-    g_CameraPosition = camera_position_c;
-    g_CameraViewVector = glm::normalize(camera_lookat_l - camera_position_c); // Vetor "view", sentido para onde a câmera está virada
-    glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
-    glm::vec4 u_vector = crossproduct(camera_up_vector, -g_CameraViewVector);
-    u_vector.y = 0;
+    glm::mat4 view;
+    if (g_UseLookAtCamera)
+    {
+        // Câmera Look-at
+        glm::vec3 lookat_target = g_TargetPosition + glm::vec3(0.0f, 2.0f, 0.0f);
 
-    glm::vec4 w_vector = g_CameraViewVector;
-    w_vector.y = 0;
+        float y = g_CameraDistance * sin(g_CameraPhi);
+        float z = g_CameraDistance * cos(g_CameraPhi) * cos(g_CameraTheta);
+        float x = g_CameraDistance * cos(g_CameraPhi) * sin(g_CameraTheta);
 
-    float camera_speed = 3.0f;
-    if(tecla_W_pressionada)
-      camera_position_c += w_vector * camera_speed * deltaTime;
-    if(tecla_A_pressionada)
-      camera_position_c -= u_vector * camera_speed * deltaTime;
-    if(tecla_S_pressionada)
-      camera_position_c -= w_vector * camera_speed * deltaTime;
-    if(tecla_D_pressionada)
-      camera_position_c += u_vector * camera_speed * deltaTime;
+        glm::vec3 camera_position = lookat_target + glm::vec3(x, y, z);
+        glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f);
 
-    cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
-
-    Plane walls[] = {wall_front, wall_back, wall_right, wall_left};
-    for (const auto& wall : walls) {
-        float signedDistance = glm::dot(wall.normal, cameraSphere.center) + wall.distance;
-        if (signedDistance > -cameraSphere.radius) {
-            float penetration = signedDistance + cameraSphere.radius;
-            cameraSphere.center -= wall.normal * penetration;
-            camera_position_c = glm::vec4(cameraSphere.center, 1.0f);
-        }
+        glm::vec4 view_vector = glm::normalize(glm::vec4(lookat_target, 1.0f) - glm::vec4(camera_position, 1.0f));
+        view = Matrix_Camera_View(glm::vec4(camera_position, 1.0f), view_vector, camera_up_vector);
+        g_CameraPosition = glm::vec4(camera_position, 1.0f);
+        g_CameraViewVector = view_vector;
     }
+    else
+    {
+        // Câmera Livre
+        float y = sin(g_CameraPhi);
+        float z = cos(g_CameraPhi)*cos(g_CameraTheta);
+        float x = cos(g_CameraPhi)*sin(g_CameraTheta);
 
-    // Computamos a matriz "View" utilizando os parâmetros da câmera para
-    // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-    glm::mat4 view = Matrix_Camera_View(camera_position_c, g_CameraViewVector, camera_up_vector);
+        glm::vec4 camera_lookat_l = camera_position_c - glm::vec4(x,y,z,0.0f);
+        g_CameraPosition = camera_position_c;
+        g_CameraViewVector = glm::normalize(camera_lookat_l - camera_position_c); // Vetor "view", sentido para onde a câmera está virada
+        glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+        glm::vec4 u_vector = crossproduct(camera_up_vector, -g_CameraViewVector);
+        u_vector.y = 0;
+
+        glm::vec4 w_vector = g_CameraViewVector;
+        w_vector.y = 0;
+
+        float camera_speed = 3.0f;
+        if(tecla_W_pressionada)
+          camera_position_c += w_vector * camera_speed * deltaTime;
+        if(tecla_A_pressionada)
+          camera_position_c -= u_vector * camera_speed * deltaTime;
+        if(tecla_S_pressionada)
+          camera_position_c -= w_vector * camera_speed * deltaTime;
+        if(tecla_D_pressionada)
+          camera_position_c += u_vector * camera_speed * deltaTime;
+
+        cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+
+        Plane walls[] = {wall_front, wall_back, wall_right, wall_left};
+        for (const auto& wall : walls) {
+            float signedDistance = glm::dot(wall.normal, cameraSphere.center) + wall.distance;
+            if (signedDistance > -cameraSphere.radius) {
+                float penetration = signedDistance + cameraSphere.radius;
+                cameraSphere.center -= wall.normal * penetration;
+                camera_position_c = glm::vec4(cameraSphere.center, 1.0f);
+            }
+        }
+        view = Matrix_Camera_View(camera_position_c, g_CameraViewVector, camera_up_vector);
+    }
 
     // Agora computamos a matriz de Projeção.
     glm::mat4 projection;
@@ -1107,6 +1127,8 @@ void DrawVirtualObject(const char* object_name)
 // Função que desenha um cubo com arestas em preto, definido dentro da função BuildTriangles().
 void DrawCube(GLint render_as_black_uniform)
 {
+  glBindVertexArray(g_VirtualScene["cube_faces"].vertex_array_object_id); // Bind VAO here
+
   // Informamos para a placa de vídeo (GPU) que a variável booleana
   // "render_as_black" deve ser colocada como "false". Veja o arquivo
   // "shader_vertex.glsl".
@@ -1165,6 +1187,8 @@ void DrawCube(GLint render_as_black_uniform)
       GL_UNSIGNED_INT,
       (void*)(g_VirtualScene["cube_edges"].first_index * sizeof(GLuint))
       );
+
+  glBindVertexArray(0);
 }
 
 void DrawLine(GLint render_as_black_uniform)
@@ -1198,15 +1222,15 @@ GLuint BuildTriangles()
                               // Vértices para desenhar o eixo X
                               //    X      Y     Z     W
     0.0f,  0.0f,  0.0f, 1.0f, // posição do vértice 8
-    1.0f,  0.0f,  0.0f, 1.0f, // posição do vértice 9
+    10.0f,  0.0f,  0.0f, 1.0f, // posição do vértice 9
                               // Vértices para desenhar o eixo Y
                               //    X      Y     Z     W
     0.0f,  0.0f,  0.0f, 1.0f, // posição do vértice 10
-    0.0f,  1.0f,  0.0f, 1.0f, // posição do vértice 11
+    0.0f,  10.0f,  0.0f, 1.0f, // posição do vértice 11
                               // Vértices para desenhar o eixo Z
                               //    X      Y     Z     W
     0.0f,  0.0f,  0.0f, 1.0f, // posição do vértice 12
-    0.0f,  0.0f,  1.0f, 1.0f, // posição do vértice 13
+    0.0f,  0.0f,  10.0f, 1.0f // posição do vértice 13
   };
 
   GLuint VBO_model_coefficients_id;
@@ -1266,14 +1290,14 @@ GLuint BuildTriangles()
   GLfloat normal_coefficients[] = {
     // Vértices de um cubo
     //    X      Y     Z     W
-    -0.5f,  0.0f,  0.5f, 0.0f, // normal do vértice 0
-    -0.5f, -1.0f,  0.5f, 0.0f, // normal do vértice 1
-    0.5f, -1.0f,  0.5f, 0.0f, // normal do vértice 2
-    0.5f,  0.0f,  0.5f, 0.0f, // normal do vértice 3
-    -0.5f,  0.0f, -0.5f, 0.0f, // normal do vértice 4
-    -0.5f, -1.0f, -0.5f, 0.0f, // normal do vértice 5
-    0.5f, -1.0f, -0.5f, 0.0f, // normal do vértice 6
-    0.5f,  0.0f, -0.5f, 0.0f, // normal do vértice 7
+    -0.57735f,  0.57735f,  0.57735f, 0.0f, // normal do vértice 0
+    -0.57735f, -0.57735f,  0.57735f, 0.0f, // normal do vértice 1
+     0.57735f, -0.57735f,  0.57735f, 0.0f, // normal do vértice 2
+     0.57735f,  0.57735f,  0.57735f, 0.0f, // normal do vértice 3
+    -0.57735f,  0.57735f, -0.57735f, 0.0f, // normal do vértice 4
+    -0.57735f, -0.57735f, -0.57735f, 0.0f, // normal do vértice 5
+     0.57735f, -0.57735f, -0.57735f, 0.0f, // normal do vértice 6
+     0.57735f,  0.57735f, -0.57735f, 0.0f, // normal do vértice 7
     // As normais para os eixos não importam, pois não são usadas para iluminação
     0.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 0.0f,
@@ -1486,8 +1510,8 @@ GLuint BuildPlane()
 
     // Índices para formar dois triângulos
     GLuint indices[] = {
-        0, 1, 2,
-        0, 2, 3,
+        0, 2, 1,
+        0, 3, 2,
     };
 
     GLuint vertex_array_object_id;
@@ -1745,16 +1769,14 @@ double g_LastCursorPosX, g_LastCursorPosY;
 // Função callback chamada sempre que o usuário aperta algum dos botões do mouse
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && !g_UseLookAtCamera)
   {
-    // Get the model matrix for the target
     glm::mat4 model = Matrix_Identity();
     model = model * Matrix_Translate(g_TargetPosition.x, g_TargetPosition.y, g_TargetPosition.z);
     model = model * Matrix_Rotate_Y(g_TargetAngle);
     model = model * Matrix_Rotate_X(-1.57079632679f); // Rotaciona para ficar em pé
     model = model * Matrix_Scale(0.015f * g_TargetScale, 0.015f * g_TargetScale, 0.015f * g_TargetScale);
 
-    // Transform the ray into the object's local space
     glm::mat4 invModel = glm::inverse(model);
     Ray local_ray;
     local_ray.origin = glm::vec3(invModel * glm::vec4(g_CameraPosition.x, g_CameraPosition.y, g_CameraPosition.z, 1.0f));
@@ -1925,6 +1947,12 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
   if (key == GLFW_KEY_H && action == GLFW_PRESS)
   {
     g_ShowInfoText = !g_ShowInfoText;
+  }
+
+  // Se o usuário apertar a tecla L, alternamos o tipo de câmera
+  if (key == GLFW_KEY_L && action == GLFW_PRESS)
+  {
+    g_UseLookAtCamera = !g_UseLookAtCamera;
   }
 
   // Se o usuário apertar a tecla C, alternamos a captura do mouse
