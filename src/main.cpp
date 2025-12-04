@@ -512,6 +512,7 @@ int main()
 // LÓGICA DE MOVIMENTAÇÃO E CÂMERA HÍBRIDA (FPS / TPS)
 // -------------------------------------------------------------------------------
 
+
 // 1. Calculamos a direção para onde o jogador está "olhando" (Forward Vector)
 //    Isso é baseado nos ângulos Theta e Phi controlados pelo mouse.
 //    *** DECLARAÇÃO DE VARIÁVEIS LOCAIS RESOLVENDO ERROS DE ESCOPO ***
@@ -565,65 +566,27 @@ if(tecla_D_pressionada) g_PosicaoJogador += right_vector * camera_speed * deltaT
 // -------------------------------------------------------------------------
 // 5. Definimos a posição final da CÂMERA baseada no modo escolhido
 // -------------------------------------------------------------------------
+glm::vec4 camera_position_c;
+
 if (!g_UseLookAtCamera)
 {
-    // --- MODO 1ª PESSOA (FPS) ---
-    // camera_position_c é uma variável que deve ser acessível e modificável aqui.
-    camera_position_c = g_PosicaoJogador;
+    // FPS: câmera fica na cabeça do jogador
+    camera_position_c = g_PosicaoJogador + glm::vec4(0.0f, 1.7f, 0.0f, 0.0f);
 }
 else
 {
-    // --- MODO 3ª PESSOA (TPS) ---
-    float camera_offset_distance = 5.0f; // Distância atrás do jogador
-    float camera_offset_height = 2.0f;   // Altura acima do jogador
+    // TPS: câmera fica atrás do jogador
+    float camera_offset_distance = 6.0f;
+    float camera_offset_height   = 2.5f;
 
-    // Calcula a posição da câmera: Posição do Jogador - (Frente * Distância) + Altura
-    camera_position_c = g_PosicaoJogador
-                        - forward_vector * camera_offset_distance
-                        + glm::vec4(0.0f, camera_offset_height, 0.0f, 0.0f);
+    camera_position_c = g_PosicaoJogador - forward_vector * camera_offset_distance + glm::vec4(0.0f, camera_offset_height, 0.0f, 0.0f);
 }
 
-// ESTE CÓDIGO DEVE VIR SEMPRE DEPOIS DO IF/ELSE, INDEPENDENTE DO MODO:
-// *** DECLARAÇÃO DE VARIÁVEL LOCAL RESOLVENDO O ERRO DE ESCOPO NA LINHA 586 ***
-glm::vec4 camera_up_vector = glm::vec4(0.0f,1.0f,0.0f,0.0f); 
-g_CameraViewVector = forward_vector; // Onde a câmera aponta
-g_CameraPosition = camera_position_c; // Posição final da câmera
-
-// Calcula e envia a matriz View (Crucial para a renderização)
-glm::mat4 view = Matrix_Camera_View(camera_position_c, g_CameraViewVector, camera_up_vector);
-glUniformMatrix4fv(g_view_uniform, 1, GL_FALSE, glm::value_ptr(view));
-
-
-// -------------------------------------------------------------------------
-// RENDERIZAÇÃO DO PERSONAGEM JOGADOR (apenas em 3ª pessoa)
-// -------------------------------------------------------------------------
-
-if (g_UseLookAtCamera) 
-{
-    // CUIDADO: SEMPRE comece com a matriz identidade para o modelo
-    glm::mat4 model = Matrix_Identity();
-    
-    // 1. POSIÇÃO: Translada para a posição do jogador
-    model = model * Matrix_Translate(g_PosicaoJogador.x, g_PosicaoJogador.y - 1.0f, g_PosicaoJogador.z);
-    
-    // 2. ROTAÇÃO: Faz o personagem girar com a câmera
-    model = model * Matrix_Rotate_Y(g_CameraTheta - glm::pi<float>()/2.0f);
-    
-    // 3. ESCALA 
-    model = model * Matrix_Scale(0.3f, 0.3f, 0.3f); 
-    
-    // Envia a matriz Model
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform1i(g_object_id_uniform, 3); 
-    
-    // CHAMA A FUNÇÃO DE DESENHO
-    DrawVirtualObject("Cube001"); // Nome do objeto do jogador
-}
-
-    // Computamos a matriz "View" utilizando os parâmetros da câmera para
-    // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-   // glm::mat4 view = Matrix_Camera_View(camera_position_c, g_CameraViewVector, camera_up_vector);
-
+glm::vec4 camera_up_vector = glm::vec4(0,1,0,0);
+g_CameraViewVector = forward_vector;
+g_CameraPosition   = camera_position_c;
+glm::mat4 view = Matrix_Camera_View(camera_position_c, forward_vector, camera_up_vector);
+glm::mat4 view_inv = Matrix_Inverse_View(view);
     // Agora computamos a matriz de Projeção.
     glm::mat4 projection;
 
@@ -659,8 +622,94 @@ if (g_UseLookAtCamera)
     glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
     glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-    const float angulo_90_rad = 1.57079632679f;
+glm::mat4 rotation_inverse = Matrix_Inverse_View(view);
+rotation_inverse[3] = glm::vec4(0,0,0,1); 
 
+// ---- FPS: renderização da USP ORIGINAL ----
+if (!g_UseLookAtCamera)
+{
+    // -------------------- USP --------------------
+    glm::mat4 model = Matrix_Identity();
+    model = model * Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+    model = model * rotation_inverse;
+    model = model * Matrix_Translate(0.4f, -0.4f, -0.6f);
+    model = model * Matrix_Scale(0.075f,0.075f,0.075f);
+
+    glUniformMatrix4fv(g_model_uniform,1,GL_FALSE, glm::value_ptr(model));
+
+    // Cada parte da USP tem ID e textura própria
+    glUniform1i(g_object_id_uniform, 10); DrawVirtualObject("Cube.003");
+    glUniform1i(g_object_id_uniform, 11); DrawVirtualObject("Cube.002");
+    glUniform1i(g_object_id_uniform, 12); DrawVirtualObject("Cube.001");
+    glUniform1i(g_object_id_uniform, 13); DrawVirtualObject("Cube");
+
+    // Opcional: linha de tiro
+    PushMatrix(model);
+    model = model * Matrix_Translate(0.0f, 2.0f, -0.5f);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glBindVertexArray(line_vao_id);
+    DrawLine(render_as_black_uniform);
+    glBindVertexArray(0);
+    PopMatrix(model);
+}
+
+// -------------------------------------------------------------------------
+// RENDERIZAÇÃO DO PERSONAGEM JOGADOR (apenas em 3ª pessoa)
+// -------------------------------------------------------------------------
+
+if (g_UseLookAtCamera)
+{
+    // -------------------- PERSONAGEM --------------------
+    glm::mat4 playerModel = Matrix_Identity();
+    playerModel = playerModel * Matrix_Translate(g_PosicaoJogador.x, g_PosicaoJogador.y, g_PosicaoJogador.z);
+
+    // rotaciona com o olhar
+    playerModel = playerModel * Matrix_Rotate_Y(g_CameraTheta - glm::pi<float>() / 2.0f);
+
+    // escala do boneco
+    playerModel = playerModel * Matrix_Scale(0.6f, 0.6f, 0.6f);
+
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(playerModel));
+    glUniform1i(g_object_id_uniform, 3);
+    DrawVirtualObject("Cube_Cube.001");
+
+    // -------------------- ARMA NA MÃO --------------------
+    glm::mat4 gunModel = playerModel;
+
+    gunModel = gunModel * Matrix_Translate(0.25f, 1.10f, 0.15f);
+    gunModel = gunModel * Matrix_Rotate_Y(glm::radians(10.0f));
+    gunModel = gunModel * Matrix_Rotate_X(glm::radians(-10.0f));
+    gunModel = gunModel * Matrix_Scale(0.08f, 0.08f, 0.08f);
+
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(gunModel));
+    glUniform1i(g_object_id_uniform, 2);
+    DrawVirtualObject("Cube.003");
+}
+
+    // Computamos a matriz "View" utilizando os parâmetros da câmera para
+    // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
+   // glm::mat4 view = Matrix_Camera_View(camera_position_c, g_CameraViewVector, camera_up_vector);
+
+
+
+    // ------------------ TARGET (ALVO MÓVEL) ------------------
+  if (g_TargetShow) {
+    model = Matrix_Identity();
+    model = model * Matrix_Translate(g_TargetPosition.x, g_TargetPosition.y, g_TargetPosition.z);
+    model = model * Matrix_Rotate_Y(g_TargetAngle);
+    model = model * Matrix_Rotate_X(-1.57079632679f);
+    model = model * Matrix_Scale(0.015f * g_TargetScale, 0.015f * g_TargetScale, 0.015f * g_TargetScale);
+
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, 6);
+    DrawVirtualObject("10480_archery_target");
+  }
+    glBindVertexArray(vertex_array_object_id);
+
+    model = Matrix_Identity();
+const float angulo_90_rad = 1.57079632679f;
+
+    // PAREDE EXTERNA PRINCIPAL (FRENTE)
     // PAREDE EXTERNA PRINCIPAL
     model = Matrix_Identity();
     glUniform1i(g_object_id_uniform, 50);
@@ -670,8 +719,9 @@ if (g_UseLookAtCamera)
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     DrawCube(render_as_black_uniform);
     PopMatrix(model);
+    
 
-    // PAREDE EXTERNA COPIADA
+   // PAREDE EXTERNA COPIADA
     PushMatrix(model);
     model = model * Matrix_Translate(50.0f, 0.0f, 50.0f);
     model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
@@ -680,7 +730,7 @@ if (g_UseLookAtCamera)
     DrawCube(render_as_black_uniform);
     PopMatrix(model);
 
-    // PAREDE EXTERNA COPIADA 2
+   // PAREDE EXTERNA COPIADA 2
     PushMatrix(model);
     model = model * Matrix_Translate(-50.0f, 0.0f, 50.0f);
     model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
@@ -688,7 +738,7 @@ if (g_UseLookAtCamera)
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     DrawCube(render_as_black_uniform);
     PopMatrix(model);
-
+    
     PushMatrix(model);
     model = model * Matrix_Translate(0.0f, 0.0f, 100.0f);
     // model = model * Matrix_Rotate(angulo_90_rad, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
@@ -696,73 +746,8 @@ if (g_UseLookAtCamera)
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     DrawCube(render_as_black_uniform);
     PopMatrix(model);
-
-    // PushMatrix(model);
-    // model = model * Matrix_Translate(-2.0f, 0.0f, 0.0f);
-    // glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    // DrawCube(render_as_black_uniform);
-    //
-    // PushMatrix(model);
-    // model = model * Matrix_Translate(-2.0f, 0.0f, 0.0f);
-    // glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    // DrawCube(render_as_black_uniform);
-    // PopMatrix(model);
-
-
-    // Neste ponto a matriz model recuperada é a matriz inicial (translação do torso)
-
-    // Desenha o alvo
-    if (g_TargetShow) {
-        model = Matrix_Identity();
-        model = model * Matrix_Translate(g_TargetPosition.x, g_TargetPosition.y, g_TargetPosition.z);
-        model = model * Matrix_Rotate_Y(g_TargetAngle);
-        model = model * Matrix_Rotate_X(-1.57079632679f); // Rotaciona para ficar em pé
-        model = model * Matrix_Scale(0.015f * g_TargetScale, 0.015f * g_TargetScale, 0.015f * g_TargetScale);
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, 6); // ID do alvo
-        DrawVirtualObject("10480_archery_target");
-    }
-
-    // Agora queremos desenhar os eixos XYZ de coordenadas GLOBAIS.
-    // Para tanto, colocamos a matriz de modelagem igual à identidade.
-    // Veja slides 2-14 e 184-190 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-
-    #define BUNNY 1
-    #define USP 2
-    #define COW 3
-
-    // USP em primeira pessoa (fixo na tela)
-    // Pegamos a matriz inversa da view para "desfazer" a rotação da câmera
-    glm::mat4 view_inverse = Matrix_Inverse_View(view);
-
-    // Extraímos apenas a parte de rotação (removendo a translação)
-    glm::mat4 rotation_inverse = view_inverse;
-    rotation_inverse[3][0] = 0.0f;
-    rotation_inverse[3][1] = 0.0f;
-    rotation_inverse[3][2] = 0.0f;
-
-    model = Matrix_Identity();
-    model = model * Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
-    model = model * rotation_inverse; // Aplica a inversa da rotação
-    model = model * Matrix_Translate(0.4f, -0.4f, -0.6f); // Offset local
-    model = model * Matrix_Scale(0.075f, 0.075f, 0.075f);
-
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform1i(g_object_id_uniform, USP);
-
-    glUniform1i(g_object_id_uniform, 10); 
-    DrawVirtualObject("Cube.003");
-
-    glUniform1i(g_object_id_uniform, 11);
-    DrawVirtualObject("Cube.002");
-
-    glUniform1i(g_object_id_uniform, 12);
-    DrawVirtualObject("Cube.001");
-
-    glUniform1i(g_object_id_uniform, 13);
-    DrawVirtualObject("Cube");
-
-    // Desenha a linha de tiro
+    
+   /* // Desenha a linha de tiro
     PushMatrix(model);
     model = model * Matrix_Translate(0.0f, 2.0f, -0.5f); 
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -770,10 +755,10 @@ if (g_UseLookAtCamera)
     DrawLine(render_as_black_uniform);
     glBindVertexArray(0);
     PopMatrix(model);
-
+  */
     // Enviamos a nova matriz "model" para a placa de vídeo (GPU). Veja o
     // arquivo "shader_vertex.glsl".
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    //glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
 
     // Pedimos para OpenGL desenhar linhas com largura de 10 pixels.
     glLineWidth(10.0f);
