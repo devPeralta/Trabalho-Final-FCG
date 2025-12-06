@@ -3,7 +3,8 @@
 #include "../include/matrices.h"
 
 bool checkSpherePlaneCollision(const Sphere& sphere, const Plane& plane) {
-    float signedDistance = glm::dot(plane.normal, sphere.center) + plane.distance;
+    float signedDistance = dotproduct(glm::vec4(plane.normal, 0.0f),
+                                         glm::vec4(sphere.center, 0.0f)) + plane.distance;
     return glm::abs(signedDistance) <= sphere.radius;
 }
 
