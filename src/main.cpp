@@ -397,6 +397,12 @@ int main()
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
 
+  Plane paredes[4];
+  paredes[0] = {glm::vec3(0.0f, 0.0f, 1.0f), 0.0f};
+  paredes[1] = {glm::vec3(0.0f, 0.0f, -1.0f), -100.0f};
+  paredes[2] = {glm::vec3(1.0f, 0.0f, 0.0f), 50.0f};
+  paredes[3] = {glm::vec3(-1.0f, 0.0f, 0.0f), -50.0f};
+
   glm::vec4 camera_position_c  = glm::vec4(0.0f, 1.7f, 5.0f, 1.0f);
 
   Sphere cameraSphere;
@@ -510,6 +516,7 @@ int main()
         w_vector.y = 0;
 
         float camera_speed = 3.0f;
+        glm::vec4 old_camera_position = camera_position_c;
         if(tecla_W_pressionada)
           camera_position_c += w_vector * camera_speed * deltaTime;
         if(tecla_A_pressionada)
@@ -518,6 +525,15 @@ int main()
           camera_position_c -= w_vector * camera_speed * deltaTime;
         if(tecla_D_pressionada)
           camera_position_c += u_vector * camera_speed * deltaTime;
+
+        cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+
+        for (int i = 0; i < 4; ++i) {
+            if (checkSpherePlaneCollision(cameraSphere, paredes[i])) {
+                camera_position_c = old_camera_position;
+                break;
+            }
+        }
 
                 cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
 
