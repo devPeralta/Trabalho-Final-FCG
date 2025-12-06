@@ -247,7 +247,10 @@ bool g_ShowInfoText = true;
 glm::vec3 g_TargetPosition = glm::vec3(5.0f, -0.6f, 20.0f);
 bool g_TargetShow = true;
 float g_TargetAngle = 0.0f;
-float g_TargetScale = 2.2f;
+const float INITIAL_TARGET_SCALE = 50.0f;
+float g_TargetScale = INITIAL_TARGET_SCALE;
+int g_TargetPhase = 1;
+const int MAX_TARGET_PHASES = 10;
 
 std::vector<glm::vec3> g_ControlPoints;
 int g_CurrentSegment = 0;
@@ -397,12 +400,6 @@ int main()
   glm::vec4 camera_position_c  = glm::vec4(0.0f, 1.7f, 5.0f, 1.0f);
 
   Sphere cameraSphere;
-  cameraSphere.radius = 0.5f;
-
-  Plane wall_front = {glm::vec3(0.0f, 0.0f, 1.0f), -99.75f};    // z = 99.75
-  Plane wall_back  = {glm::vec3(0.0f, 0.0f, -1.0f), 0.25f};     // z = 0.25
-  Plane wall_right = {glm::vec3(1.0f, 0.0f, 0.0f), -49.75f};    // x = 49.75
-  Plane wall_left  = {glm::vec3(-1.0f, 0.0f, 0.0f), -49.75f};   // x = -49.75
 
   float deltaTime = 0.0f;
   float lastFrame = 0.0f;
@@ -522,17 +519,69 @@ int main()
         if(tecla_D_pressionada)
           camera_position_c += u_vector * camera_speed * deltaTime;
 
-        cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+                cameraSphere.center = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z);
 
-        Plane walls[] = {wall_front, wall_back, wall_right, wall_left};
-        for (const auto& wall : walls) {
-            float signedDistance = glm::dot(wall.normal, cameraSphere.center) + wall.distance;
-            if (signedDistance > -cameraSphere.radius) {
-                float penetration = signedDistance + cameraSphere.radius;
-                cameraSphere.center -= wall.normal * penetration;
-                camera_position_c = glm::vec4(cameraSphere.center, 1.0f);
-            }
+        float base_radius = 0.5f;
+        float bonus_radius = 0.0f;
+        if (g_TargetPhase > 3) {
+            bonus_radius = (g_TargetPhase - 3) * 0.5f;
         }
+        cameraSphere.radius = base_radius + bonus_radius;
+
+        
+
+                // Define a esfera de colisão para o alvo
+
+                SceneObject target_model = g_VirtualScene["10480_archery_target"];
+
+                glm::vec3 bbox_size = target_model.bbox_max - target_model.bbox_min;
+
+                float target_radius = (glm::length(bbox_size) / 2.0f) * (0.015f * g_TargetScale);
+
+        
+
+                Sphere targetSphere;
+
+                targetSphere.center = g_TargetPosition;
+
+                        // Garante um raio de colisão mínimo para o alvo, aumentado para facilitar a colisão
+
+                        targetSphere.radius = glm::max(target_radius, 5.0f);
+
+        
+
+                // Verifica a colisão entre a esfera da câmera e a esfera do alvo
+
+                                if (checkSphereSphereCollision(cameraSphere, targetSphere))
+
+                                {
+
+                                    if (g_TargetPhase == MAX_TARGET_PHASES) {
+
+                                        // O jogo termina ou o alvo para de encolher
+
+                                    } else {
+
+                                        g_TargetPhase++;
+
+                                        if (g_TargetPhase == 9) {
+
+                                            g_TargetPhase = 1;
+
+                                        }
+
+                                        // Recalcula a escala do alvo (reduzindo pela metade)
+
+                                        g_TargetScale = INITIAL_TARGET_SCALE / pow(2.0f, g_TargetPhase - 1);
+
+                                        // Teletransporta o alvo para uma nova posição
+
+                                        GenerateNewBezierPath(true);
+
+                                    }
+
+                                }
+
         view = Matrix_Camera_View(camera_position_c, g_CameraViewVector, camera_up_vector);
     }
 

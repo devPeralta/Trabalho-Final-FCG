@@ -24,7 +24,7 @@ struct AABB {
 };
 
 bool checkSpherePlaneCollision(const Sphere& sphere, const Plane& plane);
-float checkRayPlaneCollision(const Ray& ray, const Plane& plane);
+bool checkSphereSphereCollision(const Sphere& s1, const Sphere& s2);
 bool checkRayAABBCollision(const Ray& ray, const AABB& box);
 
 #endif //TRABALHO_FINAL_FCG_COLLISIONS_H
