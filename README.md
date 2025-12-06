@@ -736,10 +736,9 @@ Com base no código pré-pronto fornecido pelo professor, que já incluía as bi
     - Inserção e configuração dos modelos 3D (`.obj`) da arma (USP) e do alvo, aplicando suas respectivas texturas e ajustando a perspectiva em primeira pessoa.
     - Construção do cenário base, com texturas para o chão e posicionamento das paredes.
     - Implementação da movimentação baseada em tempo (delta time) para garantir consistência da velocidade da câmera.
-    - Ajustes no `CMakeLists.txt` para garantir a compilação em diferentes sistemas operacionais.
     - Correção de bugs relacionados a transformações, como o cálculo da matriz inversa para a visualização da arma.
 - **Taylor Souza Frutuoso da Costa:**
-    - Nenhuma contribuição foi feita por este integrante.
+    - Ajustes no `CMakeLists.txt` para garantir a compilação em diferentes sistemas operacionais.
 
 ---
 
